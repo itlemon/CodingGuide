@@ -30,4 +30,5 @@ hs_err_pid*
 /node_modules/
 /.site/
 /docs/.vuepress/dist/
+nohup.out
 
