@@ -11,7 +11,7 @@ module.exports = {
             copySelector: ['div[class*="language-"] pre', 'div[class*="aside-code"] aside'], // String or Array
             copyMessage: '拷贝成功',
             toolTipMessage: '拷贝',
-            duration: 2000,
+            duration: 1000,
         }]
     ],
     // markdown相关配置
