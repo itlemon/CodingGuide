@@ -2,10 +2,18 @@
 module.exports = {
     port: "8080",
     base: "/",
-    // 是否开启默认预加载js
-    shouldPrefetch: (file, type) => {
-        return false;
-    },
+    // 插件配置
+    plugins: [
+        // 全文搜索插件
+        ['fulltext-search'],
+        // 代码复制插件
+        ['one-click-copy', {
+            copySelector: ['div[class*="language-"] pre', 'div[class*="aside-code"] aside'], // String or Array
+            copyMessage: '拷贝成功',
+            toolTipMessage: '拷贝',
+            duration: 2000,
+        }]
+    ],
     // markdown相关配置
     markdown: {
         lineNumbers: true,
