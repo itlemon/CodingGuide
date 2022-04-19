@@ -32,3 +32,5 @@ hs_err_pid*
 /docs/.vuepress/dist/
 nohup.out
 
+.temp
+.cache
