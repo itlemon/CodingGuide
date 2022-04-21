@@ -119,6 +119,14 @@ export default defineUserConfig<DefaultThemeOptions>({
     // 插件配置
     plugins: [
         [
+            "vuepress-plugin-china-search-console",
+            {
+                baiduId: '95441a1288ba1c91d088a118a4b4ddbb',
+                // toutiaoAutoPushId: '',
+                autoPushBaiduSwitch: true
+            }
+        ],
+        [
             "vuepress-plugin-clipboard", {
                 successText: '拷贝成功!'
             }
