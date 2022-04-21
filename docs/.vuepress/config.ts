@@ -35,8 +35,8 @@ export default defineUserConfig<DefaultThemeOptions>({
         ],
         ["link", {rel: "stylesheet", href: "//at.alicdn.com/t/font_2154804_w16nlfaojue.css"}],
         ['link', {rel: 'manifest', href: '/manifest.webmanifest'}],
-        ['meta', {name: 'application-name', content: 'VuePress'}],
-        ['meta', {name: 'apple-mobile-web-app-title', content: 'VuePress'}],
+        ['meta', {name: 'application-name', content: '程序员乐源'}],
+        ['meta', {name: 'apple-mobile-web-app-title', content: '程序员乐源'}],
         [
             'meta',
             {name: 'apple-mobile-web-app-status-bar-style', content: 'black'},
@@ -118,6 +118,18 @@ export default defineUserConfig<DefaultThemeOptions>({
 
     // 插件配置
     plugins: [
+        ['@vuepress/plugin-pwa'],
+        [
+            '@vuepress/plugin-pwa-popup',
+            {
+                locales: {
+                    '/': {
+                        message: '发现文档已更新',
+                        buttonText: '刷新',
+                    },
+                },
+            },
+        ],
         [
             // 谷歌分析
             '@vuepress/plugin-google-analytics',

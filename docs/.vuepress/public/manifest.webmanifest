@@ -1,7 +1,7 @@
 {
-  "name": "VuePress",
-  "short_name": "VuePress",
-  "description": "Vue-powered Static Site Generator",
+  "name": "程序员乐源",
+  "short_name": "程序员乐源",
+  "description": "Programmer's source of happiness",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#fff",
