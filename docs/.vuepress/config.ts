@@ -120,8 +120,8 @@ export default defineUserConfig<DefaultThemeOptions>({
     plugins: [
         [
             "vuepress-plugin-clipboard", {
-            // options...
-        }
+                successText: '拷贝成功!'
+            }
         ],
         ['@vuepress/plugin-pwa', false],
         [
