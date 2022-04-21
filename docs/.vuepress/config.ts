@@ -118,7 +118,7 @@ export default defineUserConfig<DefaultThemeOptions>({
 
     // 插件配置
     plugins: [
-        ['@vuepress/plugin-pwa'],
+        ['@vuepress/plugin-pwa', false],
         [
             '@vuepress/plugin-pwa-popup',
             {
