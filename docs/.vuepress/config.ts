@@ -2,9 +2,6 @@ import {defineUserConfig} from 'vuepress'
 import type {DefaultThemeOptions} from 'vuepress'
 import {navbar, sidebar} from './configs'
 
-// 根据环境变量配置是否是生产环境
-const isProd = process.env.NODE_ENV === 'production1'
-
 export default defineUserConfig<DefaultThemeOptions>({
     // 站点配置
     locales: {
@@ -131,9 +128,9 @@ export default defineUserConfig<DefaultThemeOptions>({
         [
             '@vuepress/plugin-docsearch',
             {
-                appId: '34YFD9IUQ2',
-                apiKey: '9a9058b8655746634e01071411c366b8',
-                indexName: 'vuepress',
+                appId: 'ZSZ2WGDLBS',
+                apiKey: '93cd1d1c5d736731a6358516d55e8e34',
+                indexName: 'CodingGuide',
                 searchParameters: {
                     facetFilters: ['tags:v2'],
                 },
