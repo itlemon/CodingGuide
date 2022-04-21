@@ -118,6 +118,11 @@ export default defineUserConfig<DefaultThemeOptions>({
 
     // 插件配置
     plugins: [
+        [
+            "vuepress-plugin-clipboard", {
+            // options...
+        }
+        ],
         ['@vuepress/plugin-pwa', false],
         [
             '@vuepress/plugin-pwa-popup',
