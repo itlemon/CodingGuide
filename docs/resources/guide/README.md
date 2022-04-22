@@ -1,5 +1,7 @@
 # 介绍
 
+<GlobalTableOfContents />
+
 ```typescript
 import {defineUserConfig} from 'vuepress'
 import type {DefaultThemeOptions} from 'vuepress'
