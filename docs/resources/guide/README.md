@@ -1,6 +1,6 @@
 # 介绍
 
-```vue
+```typescript
 import {defineUserConfig} from 'vuepress'
 import type {DefaultThemeOptions} from 'vuepress'
 import {navbar, sidebar} from './configs'
