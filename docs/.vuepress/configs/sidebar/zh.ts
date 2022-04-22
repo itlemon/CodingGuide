@@ -30,14 +30,25 @@ export const zh: SidebarConfig = {
             ],
         },
         {
-            text: 'Cookbook',
+            text: '算法',
+            link: '/resources/data-structure-and-algorithm/algorithm/',
             children: [
-                '/zh/advanced/cookbook/README.md',
-                '/zh/advanced/cookbook/usage-of-client-app-enhance.md',
-                '/zh/advanced/cookbook/adding-extra-pages.md',
-                '/zh/advanced/cookbook/making-a-theme-extendable.md',
-                '/zh/advanced/cookbook/passing-data-to-client-code.md',
-                '/zh/advanced/cookbook/markdown-and-vue-sfc.md',
+                {
+                    text: '数组',
+                    children: [
+                        '01 数组类算法题.md',
+                        '02 链表类算法题.md',
+                        '03 二叉树类算法题.md'
+                    ]
+                },
+                {
+                    text: '其他',
+                    children: [
+                        '01 数组类算法题.md',
+                        '02 链表类算法题.md',
+                        '03 二叉树类算法题.md'
+                    ]
+                }
             ],
         },
     ],
