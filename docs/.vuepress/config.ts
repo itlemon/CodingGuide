@@ -118,7 +118,6 @@ export default defineUserConfig<DefaultThemeOptions>({
 
     // 插件配置
     plugins: [
-        ['vuepress-plugin-global-toc'],
         [
             "vuepress-plugin-china-search-console",
             {
