@@ -6,26 +6,27 @@ export const zh: SidebarConfig = {
             text: '阅读指南',
             collapsible: true,
             children: [
-                '/resources/guide/README.md',
-                '/resources/guide/getting-started.md'
+                'README.md',
+                'getting-started.md'
             ],
         },
         {
             text: '阅读指南1',
             collapsible: true,
             children: [
-                '/resources/guide/README.md',
-                '/resources/guide/getting-started.md'
+                'README.md',
+                'getting-started.md'
             ],
         },
     ],
-    '/zh/advanced/': [
+    '/resources/data-structure-and-algorithm/': [
         {
-            text: '深入',
+            text: '数据结构',
+            link: '/resources/data-structure-and-algorithm/data-structure/',
             children: [
-                '/zh/advanced/architecture.md',
-                '/zh/advanced/plugin.md',
-                '/zh/advanced/theme.md',
+                '01 为什么要学习数据结构.md',
+                '02 数组.md',
+                '03 链表.md',
             ],
         },
         {
