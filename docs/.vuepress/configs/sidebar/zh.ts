@@ -22,7 +22,7 @@ export const zh: SidebarConfig = {
     '/resources/data-structure-and-algorithm/': [
         {
             text: '数据结构',
-            link: '/resources/data-structure-and-algorithm/data-structure/',
+            link: '/data-structure/',
             children: [
                 '01 为什么要学习数据结构.md',
                 '02 数组.md',
@@ -31,7 +31,7 @@ export const zh: SidebarConfig = {
         },
         {
             text: '算法',
-            link: '/resources/data-structure-and-algorithm/algorithm/',
+            link: '/algorithm/',
             children: [
                 {
                     text: '数组',
