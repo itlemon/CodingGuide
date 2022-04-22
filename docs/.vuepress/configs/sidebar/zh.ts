@@ -9,6 +9,13 @@ export const zh: SidebarConfig = {
                 '/resources/guide/getting-started.md'
             ],
         },
+        {
+            text: '阅读指南1',
+            children: [
+                '/resources/guide/README.md',
+                '/resources/guide/getting-started.md'
+            ],
+        },
     ],
     '/zh/advanced/': [
         {
