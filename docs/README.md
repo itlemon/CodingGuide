@@ -1,9 +1,8 @@
 ---
 home: true
-title: 首页
 heroImage: /images/hero.png
 actions:
-- text: 快速上手
+- text: 阅读指南
   link: /resources/guide/getting-started.md
   type: primary
 - text: 项目简介
