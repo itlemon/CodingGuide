@@ -36,9 +36,9 @@ export const zh: SidebarConfig = {
                 {
                     text: '数组',
                     children: [
-                        '01 数组类算法题.md',
-                        '02 链表类算法题.md',
-                        '03 二叉树类算法题.md'
+                        '/resources/data-structure-and-algorithm/algorithm/01 数组类算法题.md',
+                        '/resources/data-structure-and-algorithm/algorithm/02 链表类算法题.md',
+                        '/resources/data-structure-and-algorithm/algorithm/03 二叉树类算法题.md'
                     ]
                 },
                 {
