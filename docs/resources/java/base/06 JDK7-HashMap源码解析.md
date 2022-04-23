@@ -8,7 +8,7 @@
 
 在正式讨论HashMap之前，我们有必要把Map家族的继承实现关系展示出来，方便理解后续的内容。
 
-<div align=center><img src="https://img-blog.csdnimg.cn/20200202182926206.png" width = "80%"  alt=""/></div>
+<div style="text-align:center"><img src="https://img-blog.csdnimg.cn/20200202182926206.png" width = "80%"  alt=""/></div>
 
 上图很详细地展示了Map家族中各个成员之间的继承或者实现关系。Map接口是双列集合的顶层父接口，该集合中每个元素都是键值对key-value，成对出现。双列集合中，一个键一定只找到对应的一个值，键不能重复，但是值可以重复。Map集合常用的实现类有HashMap、LinkedHashMap、HashTable，TreeMap。
 
@@ -39,7 +39,7 @@
 
 HashMap在JDK7或者JDK8中采用的基本存储结构都是**数组+链表**形式。本节主要是研究HashMap在JDK7中的底层实现，其基本结构图如下所示：
 
-<div align=center><img src="https://img-blog.csdnimg.cn/20200208171849524.png" width = "80%"  alt=""/></div>
+<div style="text-align:center"><img src="https://img-blog.csdnimg.cn/20200208171849524.png" width = "80%"  alt=""/></div>
 
 上图中左边橙色区域是哈希表，右边蓝色区域为链表，链表中的元素类型为Entry<K, V>，它包含四个属性分别是：
 
@@ -64,7 +64,7 @@ int index = HashCode(key) % Array.length
 
 我们打开IDE查看HashMap的源码，首先得了解一下HashMap的一些成员属性，它的主要属性如下图所示：
 
-<div align=center><img src="https://img-blog.csdnimg.cn/20200208200457643.png" width = "90%" /></div>
+<div style="text-align:center"><img src="https://img-blog.csdnimg.cn/20200208200457643.png" width = "90%"  alt=""/></div>
 
 这里对上面的属性进行简单地介绍：
 
@@ -406,17 +406,17 @@ e.hash == hash && ((k = e.key) == key || (key != null && key.equals(k)))
 节点的key和目标key的hash值肯定是相等的，`&&`右边的条件，即节点的key与目标key的相等，要么内存地址相等，要么逻辑上相等，两者有一个满足即可。
 假设get方法传入的key值计算的下标为1，HashMap的get方法的基本示意图如下所示：
 
-<div align=center><img src="https://img-blog.csdnimg.cn/20200209164034709.png" width = "90%"  alt=""/></div>
+<div style="text-align:center"><img src="https://img-blog.csdnimg.cn/20200209164034709.png" width = "90%"  alt=""/></div>
 
 ##### 2.6 HashMap put、get方法流程图
 
 这里提供一个HashMap的put方法存储数据的流程图供读者参考：
 
-<div align=center><img src="https://img-blog.csdnimg.cn/20200210152553443.png"  alt=""/></div>
+<div style="text-align:center"><img src="https://img-blog.csdnimg.cn/20200210152553443.png"  alt=""/></div>
 
 这里提供一个HashMap的get方法获取数据的流程图供读者参考：
 
-<div align=center><img src="https://img-blog.csdnimg.cn/20200211000032902.png"  alt=""/></div>
+<div style="text-align:center"><img src="https://img-blog.csdnimg.cn/20200211000032902.png"  alt=""/></div>
 
 上面中get流程图画得稍微比正常的要复杂一些，只是为了描述流程更加清晰。
 
