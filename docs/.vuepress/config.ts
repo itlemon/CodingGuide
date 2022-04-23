@@ -62,6 +62,7 @@ export default defineUserConfig<DefaultThemeOptions>({
     themeConfig: {
         logo: 'https://vuejs.org/images/logo.png',
         repo: 'itlemon/CodingGuide',
+        docsBranch: 'master',
         repoLabel: 'GitHub',
         docsDir: 'docs',
         locales: {
