@@ -1,6 +1,6 @@
 # 第7节 深入理解JDK8 HashMap
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20200614174020645.png)
+![首图](https://img-blog.csdnimg.cn/20200614174020645.png)
 
 > 笔者在上一篇文章《[深入理解JDK7 HashMap](06JDK7-HashMap源码解析.md)》中详细解析了HashMap在JDK7中的实现原理，主要是围绕其put、get、resize、transfer等方法，本文将继续解析HashMap在JDK8中的具体实现，首先也将从put、get、resize等方法出发，着重解析HashMap在JDK7和JDK8中的具体区别，最后回答并解析一些常见的HashMap问题。在阅读本篇文章之前，建议阅读上一篇文章作为基础。
 
