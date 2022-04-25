@@ -2,8 +2,6 @@ import {defineUserConfig} from 'vuepress'
 import type {DefaultThemeOptions} from 'vuepress'
 import {navbar, sidebar} from './configs'
 
-const { path } = require('@vuepress/utils')
-
 export default defineUserConfig<DefaultThemeOptions>({
     // 站点配置
     locales: {
@@ -109,13 +107,6 @@ export default defineUserConfig<DefaultThemeOptions>({
             // use shiki plugin in production mode instead
             prismjs: true,
         },
-    },
-
-    // 继承默认主题
-    extends: '@vuepress/theme-default',
-    layouts: {
-        // 覆盖404页面
-        404: path.resolve(__dirname, 'path/to/layouts/404.vue'),
     },
 
     // md配置
