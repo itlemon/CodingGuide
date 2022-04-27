@@ -61,7 +61,9 @@ export default defineUserConfig({
         ['meta', {name: 'theme-color', content: '#3eaf7c'}],
         // SEO
         ['meta', {name: 'baidu-site-verification', content: 'code-au7BVxnj3F'}],
-        ['meta', {name: 'bytedance-verification-code', content: 'xAfRSRE/n7WdGPciSAEj'}]
+        ['meta', {name: 'bytedance-verification-code', content: 'xAfRSRE/n7WdGPciSAEj'}],
+        ['script', {type: 'text/javascript', src: '/js/toutiao.js'}],
+        ['script', {type: 'text/javascript', src: '/js/baidu.js'}]
     ],
 
     // 主题和它的配置
@@ -192,12 +194,6 @@ export default defineUserConfig({
                 },
             }
         }),
-        // // SEO
-        // chinaSearchPlugin({
-        //     baiduId: '95441a1288ba1c91d088a118a4b4ddbb',
-        //     toutiaoAutoPushId: 'ba17d68774771bfdb932beaab9892091e6a714eeebce32b9a63fe55be2f4a7b5fd9a9dcb5ced4d7780eb6f3bbd089073c2a6d54440560d63862bbf4ec01bba3a',
-        //     autoPushBaiduSwitch: true
-        // }),
         // // 代码拷贝
         // oneClickCopyPlugin({
         //     successText: '拷贝成功!'
