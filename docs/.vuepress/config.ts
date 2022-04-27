@@ -37,6 +37,9 @@ export default defineUserConfig<DefaultThemeOptions>({
         ['link', {rel: 'manifest', href: '/manifest.webmanifest'}],
         ['meta', {name: 'application-name', content: '程序员乐源'}],
         ['meta', {name: 'apple-mobile-web-app-title', content: '程序员乐源'}],
+        // SEO
+        ['meta', {name: 'baidu-site-verification', content: 'code-au7BVxnj3F'}],
+        ['meta', {name: 'bytedance-verification-code', content: 'xAfRSRE/n7WdGPciSAEj'}],
         [
             'meta',
             {name: 'apple-mobile-web-app-status-bar-style', content: 'black'},

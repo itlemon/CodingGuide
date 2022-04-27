@@ -9,19 +9,11 @@ export const zh: SidebarConfig = {
                 'README.md',
                 'getting-started.md'
             ],
-        },
-        {
-            text: '阅读指南1',
-            collapsible: true,
-            children: [
-                'README.md',
-                'getting-started.md'
-            ],
-        },
+        }
     ],
     '/resources/data-structure-and-algorithm/': [
         {
-            text: '数据结构',
+            text: '据结构',
             link: '/resources/data-structure-and-algorithm/data-structure/',
             collapsible: true,
             children: [
