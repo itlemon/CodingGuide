@@ -11,7 +11,7 @@
     "dev": "vuepress dev docs --clean-cache",
     "build": "vuepress build docs --clean-cache",
     "clean": "rimraf docs/.vuepress/.temp docs/.vuepress/.cache docs/.vuepress/dist",
-    "serve": "anywhere -h localhost -p 8080 -d docs/.vuepress/dist"
+    "serve": "anywhere -h localhost -p 4000 -d docs/.vuepress/dist"
   },
   "devDependencies": {
     "@vuepress/plugin-docsearch": "^2.0.0-beta.38",
