@@ -37,9 +37,6 @@ export default defineUserConfig<DefaultThemeOptions>({
         ['link', {rel: 'manifest', href: '/manifest.webmanifest'}],
         ['meta', {name: 'application-name', content: '程序员乐源'}],
         ['meta', {name: 'apple-mobile-web-app-title', content: '程序员乐源'}],
-        // SEO
-        ['meta', {name: 'baidu-site-verification', content: 'code-au7BVxnj3F'}],
-        ['meta', {name: 'bytedance-verification-code', content: 'xAfRSRE/n7WdGPciSAEj'}],
         [
             'meta',
             {name: 'apple-mobile-web-app-status-bar-style', content: 'black'},
@@ -57,7 +54,12 @@ export default defineUserConfig<DefaultThemeOptions>({
             },
         ],
         ['meta', {name: 'msapplication-TileColor', content: '#3eaf7c'}],
-        ['meta', {name: 'theme-color', content: '#3eaf7c'}]
+        ['meta', {name: 'theme-color', content: '#3eaf7c'}],
+        // SEO
+        ['meta', {name: 'baidu-site-verification', content: 'code-au7BVxnj3F'}],
+        ['meta', {name: 'bytedance-verification-code', content: 'xAfRSRE/n7WdGPciSAEj'}],
+        ['script', {type: 'text/javascript', src: '/js/toutiao.js'}]
+
     ],
 
     // 主题和它的配置
@@ -132,8 +134,8 @@ export default defineUserConfig<DefaultThemeOptions>({
         ],
         [
             "vuepress-plugin-clipboard", {
-                successText: '拷贝成功!'
-            }
+            successText: '拷贝成功!'
+        }
         ],
         ['@vuepress/plugin-pwa', false],
         [
