@@ -4,7 +4,7 @@ import {docsearchPlugin} from '@vuepress/plugin-docsearch'
 import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
 import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
-import {ClipboardOptions} from 'vuepress-plugin-clipboard'
+import type {ClipboardOptions} from 'vuepress-plugin-clipboard'
 import {navbar, sidebar} from './configs'
 
 export default defineUserConfig({
