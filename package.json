@@ -14,12 +14,12 @@
     "serve": "anywhere -h localhost -p 4000 -d docs/.vuepress/dist"
   },
   "devDependencies": {
-    "@vuepress/plugin-docsearch": "^2.0.0-beta.38",
-    "@vuepress/plugin-google-analytics": "^2.0.0-beta.38",
-    "@vuepress/plugin-pwa": "^2.0.0-beta.38",
-    "@vuepress/plugin-pwa-popup": "^2.0.0-beta.38",
+    "@vuepress/plugin-docsearch": "^2.0.0-beta.41",
+    "@vuepress/plugin-google-analytics": "^2.0.0-beta.41",
+    "@vuepress/plugin-pwa": "^2.0.0-beta.41",
+    "@vuepress/plugin-pwa-popup": "^2.0.0-beta.41",
     "anywhere": "^1.5.0",
-    "vuepress": "^2.0.0-beta.39",
+    "vuepress": "^2.0.0-beta.41",
     "vuepress-plugin-china-search-console": "^2.0.2",
     "vuepress-plugin-clipboard": "^1.0.8"
   }

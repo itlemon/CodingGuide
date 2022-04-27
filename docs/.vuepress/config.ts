@@ -1,8 +1,11 @@
 import {defineUserConfig} from 'vuepress'
-import type {DefaultThemeOptions} from 'vuepress'
+import {defaultTheme} from '@vuepress/theme-default'
+import {docsearchPlugin} from '@vuepress/plugin-docsearch'
+import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
+import {shikiPlugin} from '@vuepress/plugin-shiki'
 import {navbar, sidebar} from './configs'
 
-export default defineUserConfig<DefaultThemeOptions>({
+export default defineUserConfig({
     // 站点配置
     locales: {
         '/': {
@@ -61,8 +64,7 @@ export default defineUserConfig<DefaultThemeOptions>({
     ],
 
     // 主题和它的配置
-    theme: '@vuepress/theme-default',
-    themeConfig: {
+    theme: defaultTheme({
         logo: 'https://vuejs.org/images/logo.png',
         repo: 'itlemon/CodingGuide',
         docsBranch: 'master',
@@ -108,9 +110,9 @@ export default defineUserConfig<DefaultThemeOptions>({
             // only enable git plugin in production mode
             git: true,
             // use shiki plugin in production mode instead
-            prismjs: true,
+            prismjs: false,
         },
-    },
+    }),
 
     // md配置
     markdown: {
@@ -122,91 +124,63 @@ export default defineUserConfig<DefaultThemeOptions>({
 
     // 插件配置
     plugins: [
-        [
-            "vuepress-plugin-china-search-console",
-            {
-                baiduId: '95441a1288ba1c91d088a118a4b4ddbb',
-                toutiaoAutoPushId: 'ba17d68774771bfdb932beaab9892091e6a714eeebce32b9a63fe55be2f4a7b5fd9a9dcb5ced4d7780eb6f3bbd089073c2a6d54440560d63862bbf4ec01bba3a',
-                autoPushBaiduSwitch: true
-            }
-        ],
-        [
-            "vuepress-plugin-clipboard", {
-            successText: '拷贝成功!'
-        }
-        ],
-        ['@vuepress/plugin-pwa', true],
-        [
-            '@vuepress/plugin-pwa-popup',
-            {
-                locales: {
-                    '/': {
-                        message: '温馨提示：文档已更新',
-                        buttonText: '刷新',
-                    },
-                },
+        // 全局搜索
+        docsearchPlugin({
+            appId: 'ZSZ2WGDLBS',
+            apiKey: '93cd1d1c5d736731a6358516d55e8e34',
+            indexName: 'CodingGuide',
+            searchParameters: {
+                facetFilters: ['tags:v2'],
             },
-        ],
-        [
-            // 谷歌分析
-            '@vuepress/plugin-google-analytics',
-            {
-                id: 'G-7G4Q35XYNX',
-            }
-        ],
-        [
-            '@vuepress/plugin-docsearch',
-            {
-                appId: 'ZSZ2WGDLBS',
-                apiKey: '93cd1d1c5d736731a6358516d55e8e34',
-                indexName: 'CodingGuide',
-                searchParameters: {
-                    facetFilters: ['tags:v2'],
-                },
-                locales: {
-                    '/': {
-                        placeholder: '搜索文档',
-                        translations: {
-                            button: {
-                                buttonText: '搜索文档',
-                                buttonAriaLabel: '搜索文档',
+            locales: {
+                '/': {
+                    placeholder: '搜索文档',
+                    translations: {
+                        button: {
+                            buttonText: '搜索文档',
+                            buttonAriaLabel: '搜索文档',
+                        },
+                        modal: {
+                            searchBox: {
+                                resetButtonTitle: '清除查询条件',
+                                resetButtonAriaLabel: '清除查询条件',
+                                cancelButtonText: '取消',
+                                cancelButtonAriaLabel: '取消',
                             },
-                            modal: {
-                                searchBox: {
-                                    resetButtonTitle: '清除查询条件',
-                                    resetButtonAriaLabel: '清除查询条件',
-                                    cancelButtonText: '取消',
-                                    cancelButtonAriaLabel: '取消',
-                                },
-                                startScreen: {
-                                    recentSearchesTitle: '搜索历史',
-                                    noRecentSearchesText: '没有搜索历史',
-                                    saveRecentSearchButtonTitle: '保存至搜索历史',
-                                    removeRecentSearchButtonTitle: '从搜索历史中移除',
-                                    favoriteSearchesTitle: '收藏',
-                                    removeFavoriteSearchButtonTitle: '从收藏中移除',
-                                },
-                                errorScreen: {
-                                    titleText: '无法获取结果',
-                                    helpText: '你可能需要检查你的网络连接',
-                                },
-                                footer: {
-                                    selectText: '选择',
-                                    navigateText: '切换',
-                                    closeText: '关闭',
-                                    searchByText: '搜索提供者',
-                                },
-                                noResultsScreen: {
-                                    noResultsText: '无法找到相关结果',
-                                    suggestedQueryText: '你可以尝试查询',
-                                    openIssueText: '你认为该查询应该有结果？',
-                                    openIssueLinkText: '点击反馈',
-                                },
+                            startScreen: {
+                                recentSearchesTitle: '搜索历史',
+                                noRecentSearchesText: '没有搜索历史',
+                                saveRecentSearchButtonTitle: '保存至搜索历史',
+                                removeRecentSearchButtonTitle: '从搜索历史中移除',
+                                favoriteSearchesTitle: '收藏',
+                                removeFavoriteSearchButtonTitle: '从收藏中移除',
+                            },
+                            errorScreen: {
+                                titleText: '无法获取结果',
+                                helpText: '你可能需要检查你的网络连接',
+                            },
+                            footer: {
+                                selectText: '选择',
+                                navigateText: '切换',
+                                closeText: '关闭',
+                                searchByText: '搜索提供者',
+                            },
+                            noResultsScreen: {
+                                noResultsText: '无法找到相关结果',
+                                suggestedQueryText: '你可以尝试查询',
+                                openIssueText: '你认为该查询应该有结果？',
+                                openIssueLinkText: '点击反馈',
                             },
                         },
                     },
                 },
             },
-        ]
+        }),
+        // 谷歌分析
+        googleAnalyticsPlugin({
+            id: 'G-7G4Q35XYNX'
+        }),
+        shikiPlugin({theme: 'dark-plus'})
     ]
+
 })
