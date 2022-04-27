@@ -135,13 +135,13 @@ export default defineUserConfig<DefaultThemeOptions>({
             successText: '拷贝成功!'
         }
         ],
-        ['@vuepress/plugin-pwa', false],
+        ['@vuepress/plugin-pwa', true],
         [
             '@vuepress/plugin-pwa-popup',
             {
                 locales: {
                     '/': {
-                        message: '发现文档已更新',
+                        message: '温馨提示：文档已更新',
                         buttonText: '刷新',
                     },
                 },
