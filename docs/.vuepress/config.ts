@@ -108,7 +108,7 @@ export default defineUserConfig<DefaultThemeOptions>({
         },
         themePlugins: {
             // only enable git plugin in production mode
-            git: false,
+            git: true,
             // use shiki plugin in production mode instead
             prismjs: true,
         },
