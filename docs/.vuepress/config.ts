@@ -2,7 +2,6 @@ import {defineUserConfig} from 'vuepress'
 import {defaultTheme} from '@vuepress/theme-default'
 import {docsearchPlugin} from '@vuepress/plugin-docsearch'
 import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
-import {shikiPlugin} from '@vuepress/plugin-shiki'
 import {navbar, sidebar} from './configs'
 
 export default defineUserConfig({
@@ -179,8 +178,7 @@ export default defineUserConfig({
         // 谷歌分析
         googleAnalyticsPlugin({
             id: 'G-7G4Q35XYNX'
-        }),
-        shikiPlugin({theme: 'dark-plus'})
+        })
     ]
 
 })
