@@ -4,7 +4,6 @@ import {docsearchPlugin} from '@vuepress/plugin-docsearch'
 import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
 import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
-import type {ClipboardOptions} from 'vuepress-plugin-clipboard'
 import {navbar, sidebar} from './configs'
 
 export default defineUserConfig({
@@ -194,10 +193,6 @@ export default defineUserConfig({
                     buttonText: '刷新',
                 },
             }
-        }),
-        // 代码拷贝
-        ClipboardOptions({
-            successText: '拷贝成功!'
         })
     ]
 })
