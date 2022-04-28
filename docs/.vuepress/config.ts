@@ -5,6 +5,7 @@ import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
 import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {nprogressPlugin} from '@vuepress/plugin-nprogress'
+import {gitPlugin} from '@vuepress/plugin-git'
 import {navbar, sidebar} from './configs'
 
 export default defineUserConfig({
@@ -195,6 +196,10 @@ export default defineUserConfig({
             }
         }),
         // 进度条插件
-        nprogressPlugin()
+        nprogressPlugin(),
+        // git插件，这里主要是为了禁止收集部分信息
+        gitPlugin({
+            contributors: false
+        })
     ]
 })
