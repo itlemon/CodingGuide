@@ -4,6 +4,7 @@ import {docsearchPlugin} from '@vuepress/plugin-docsearch'
 import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
 import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
+import {nprogressPlugin} from '@vuepress/plugin-nprogress'
 import {navbar, sidebar} from './configs'
 
 export default defineUserConfig({
@@ -193,6 +194,8 @@ export default defineUserConfig({
                     buttonText: '刷新',
                 },
             }
-        })
+        }),
+        // 进度条插件
+        nprogressPlugin()
     ]
 })
