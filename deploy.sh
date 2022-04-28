@@ -27,4 +27,4 @@ fi
 git pull
 yarn install
 yarn build
-yarn serve &
+nohup yarn serve &
