@@ -22,6 +22,7 @@ features:
 - title: 打包工具
   details: 默认的打包工具是 Vite ，也同样支持 Webpack 。选一个你喜欢的来使用吧！
 footer: <a href="http://beian.miit.gov.cn" target="_blank">皖ICP备18015590号-2</a> | <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=20220102010884" style="display:inline-block;text-decoration:none;height:20px;line-height:20px;"><img src="https://codingguide.cn/images/beian.png" style="float:left;"/><p style="float:left;height:20px;line-height:20px;margin-top:5px; color:#939393;">京公网安备 20220102010884号</p></a> | MIT Licensed | Copyright © 2022 kuaishou-itlemon & alibaba-wuwei，All rights reserved.
+footerHtml: true
 ---
 
 ```bash
