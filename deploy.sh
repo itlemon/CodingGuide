@@ -22,7 +22,6 @@ then
         kill $pid
 else
         echo 'cannot find listened port: '$port
-        exit -1
 fi
 
 git pull
