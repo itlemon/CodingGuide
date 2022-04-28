@@ -1,10 +1,10 @@
 #! /bin/bash
 # author: itlemon
-[[ $# -lt 1 ]] && { echo 'param error: must have one param(port)'; exit -1; }
-[[ $# -gt 1 ]] && { echo 'param error: only support one param(port)'; exit -1; }
+
+port=4000
 
 function get_pid_by_listen_port() {
-        pattern_str="*:$1\\b"
+        pattern_str="*:$port\\b"
         pid=$(ss -n -t -l -p | grep "$pattern_str" | column -t | awk -F ',' '{print $(NF-1)}')
 
         # 当版本号为 "ss utility, iproute2-ss161009" 时, ss 命令输出格式为:
@@ -15,7 +15,6 @@ function get_pid_by_listen_port() {
         echo $pid
 }
 
-port=4000
 pid=$(get_pid_by_listen_port $port)
 if [ -n "$pid" ]
 then
