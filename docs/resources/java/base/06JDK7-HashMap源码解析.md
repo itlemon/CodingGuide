@@ -6,7 +6,7 @@
 
 [[toc]]
 
-#### 一、Map家族关系图
+## 一、Map家族关系图
 
 在正式讨论HashMap之前，我们有必要把Map家族的继承实现关系展示出来，方便理解后续的内容。
 
@@ -35,9 +35,9 @@
 
 本文主要介绍Java7中HashMap的底层实现原理，其他的Map集合，读者可以自行翻阅其他资料进行学习。
 
-#### 二、JDK7中HashMap底层原理
+## 二、JDK7中HashMap底层原理
 
-##### 2.1 HashMap在JDK7中的结构
+### 2.1 HashMap在JDK7中的结构
 
 HashMap在JDK7或者JDK8中采用的基本存储结构都是**数组+链表**形式。本节主要是研究HashMap在JDK7中的底层实现，其基本结构图如下所示：
 
@@ -62,7 +62,7 @@ int index = HashCode(key) % Array.length
 开放寻址法是原理比较简单，就是在数组里面“另谋高就”，尝试寻找下一个空档位置，JDK中ThreadLocal发生哈希冲突以后就是采用的开放寻址法。而链表法则不是寻找下一个空档位置，而是继续在当前冲突的地方存储，与现有的数据组成链表，以链表的形式进行存储。HashMap的存储形式是**数组+链表**就是采用的链表法来解决哈希冲突问题的。具体的详细说明请继续往下看。
 在日常开发中，开发者对于HashMap使用的最多的就是它的构造方法、put方法以及get方法了，下面就开始详细地从这三个方法出发，深入理解HashMap的实现原理。
 
-##### 2.2 深入理解HashMap的构造方法
+### 2.2 深入理解HashMap的构造方法
 
 我们打开IDE查看HashMap的源码，首先得了解一下HashMap的一些成员属性，它的主要属性如下图所示：
 
@@ -205,7 +205,7 @@ void createEntry(int hash, K key, V value, int bucketIndex) {
 
 上面的代码分析很重要，对后续的put方法研究很有帮助，从上面的代码分析可知，我们从源码级别了解到JDK7中的链表新增的新成员是**插入头节点**的。
 
-##### 2.3 深入理解HashMap的put方法
+### 2.3 深入理解HashMap的put方法
 
 对于HashMap，我们平常使用最多的就是put方法了，从上面的源码分析可知，在创建HashMap对象后，并没有初始化哈希表，也就是HashMap的成员属性`Entry<K,V>[] table = (Entry<K,V>[]) EMPTY_TABLE = {}`，那这个哈希表是何时开辟空间的？答案很明显，那就是第一次使用put方法的时候。
 
@@ -295,7 +295,7 @@ void addEntry(int hash, K key, V value, int bucketIndex) {
 - 扩容条件必须同时满足`size >= threshold`和`null != table[bucketIndex]`
 - put键为null的K-V对的时候永远不会发生扩容
 
-##### 2.4 深入理解HashMap的扩容机制
+### 2.4 深入理解HashMap的扩容机制
 
 从上面小节的分析可知，扩容的条件为：
 
@@ -351,7 +351,7 @@ void transfer(Entry[] newTable, boolean rehash) {
 
 这就基本完成了对HashMap的put方法的研究，其实研究起来并不是很难理解，耐下心来阅读一下源码，肯定会有很大收获。
 
-##### 2.5 深入理解HashMap的get方法
+### 2.5 深入理解HashMap的get方法
 
 接下来我们继续来阅读get方法，相对于put方法，get方法实现起来就简单很多，理解起来也不是很困难，基本原理就是计算key的hash值，然后计算当前key在哈希表中的索引位置，然后在遍历链表，逐个比对，最后返回结果。
 
@@ -411,7 +411,7 @@ e.hash == hash && ((k = e.key) == key || (key != null && key.equals(k)))
 
 <div style="text-align:center"><img src="https://img-blog.csdnimg.cn/20200209164034709.png" width = "90%"  alt=""/></div>
 
-##### 2.6 HashMap put、get方法流程图
+### 2.6 HashMap put、get方法流程图
 
 这里提供一个HashMap的put方法存储数据的流程图供读者参考：
 
@@ -423,7 +423,7 @@ e.hash == hash && ((k = e.key) == key || (key != null && key.equals(k)))
 
 上面中get流程图画得稍微比正常的要复杂一些，只是为了描述流程更加清晰。
 
-##### 2.7 常见的HashMap的迭代方式
+### 2.7 常见的HashMap的迭代方式
 
 在实际开发过程中，我们对于HashMap的迭代遍历也是常见的操作，HashMap的迭代遍历常用方式有如下几种：
 
@@ -466,6 +466,6 @@ while (keyIterator.hasNext()) {
 
 把这四种方式进行比较，前三种其实属于同一种，都是迭代器遍历方式，如果要同时使用到key和value，推荐使用前三种方式，如果仅仅使用到key，那么推荐使用第四种。
 
-#### 三、总结
+## 三、总结
 
 本文着重讲解了JDK7中HashMap的具体实现原理，包括put、get、扩容等内部实现机制，相信读者仔细品读以后，对JDK7中的HashMap的实现会有一个清晰地认识，JDK7中的HashMap的实现原理属于经典实现，不管JDK7是否已经再被使用，但是其基本原理还是值得学习！后续将继续讲解JDK8中的HashMap实现原理，届时将对比JDK7，帮助读者掌握两者之间的共性和差异！
