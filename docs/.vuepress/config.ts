@@ -88,7 +88,6 @@ export default defineUserConfig({
                 // page meta
                 editLinkText: '在 GitHub 上编辑当前页',
                 lastUpdatedText: '上次更新',
-                contributorsText: '贡献者',
 
                 // custom containers
                 tip: '提示',
