@@ -6,7 +6,7 @@ import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {nprogressPlugin} from '@vuepress/plugin-nprogress'
 import {gitPlugin} from '@vuepress/plugin-git'
-// import {copyCode} from "vuepress-plugin-copy-code2"
+import {copyCode} from "vuepress-plugin-copy-code2"
 import {navbar, sidebar} from './configs'
 
 export default defineUserConfig({
@@ -203,18 +203,13 @@ export default defineUserConfig({
             contributors: false
         }),
         // 代码复制插件
-        // copyCode({
-        //     duration: 2000,
-        //     showInMobile: true,
-        //     // locales: {
-        //     //     copy: '复制代码',
-        //     //     hint: '复制成功!'
-        //     // }
-        // }),
-        [
-            "vuepress-plugin-clipboard", {
-            successText: '拷贝成功!'
-            }
-        ]
+        copyCode({
+            duration: 2000,
+            showInMobile: true,
+            // locales: {
+            //     copy: '复制代码',
+            //     hint: '复制成功!'
+            // }
+        }),
     ]
 })
