@@ -173,12 +173,12 @@ export default defineUserConfig({
                             noResultsScreen: {
                                 noResultsText: '无法找到相关结果',
                                 suggestedQueryText: '你可以尝试查询',
-                                openIssueText: '你认为该查询应该有结果？',
-                                openIssueLinkText: '点击反馈',
+                                reportMissingResultsText: '你认为该查询应该有结果？',
+                                reportMissingResultsLinkText: '点击反馈',
                             },
                         },
                     },
-                },
+                }
             },
         }),
         // 谷歌分析
