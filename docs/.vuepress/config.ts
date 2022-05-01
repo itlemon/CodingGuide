@@ -202,14 +202,5 @@ export default defineUserConfig({
         gitPlugin({
             contributors: false
         }),
-        // 代码复制插件
-        copyCode({
-            duration: 2000,
-            showInMobile: true,
-            // locales: {
-            //     copy: '复制代码',
-            //     hint: '复制成功!'
-            // }
-        }),
     ]
 })
