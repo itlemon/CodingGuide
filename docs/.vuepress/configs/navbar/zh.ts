@@ -7,16 +7,7 @@ export const zh: NavbarConfig = [
     },
     {
         text: '数据结构与算法',
-        children: [
-            {
-                text: '数据结构',
-                link: '/resources/data-structure-and-algorithm/data-structure/'
-            },
-            {
-                text: '算法',
-                link: '/resources/data-structure-and-algorithm/algorithm/'
-            }
-        ]
+        link: '/resources/data-structure-and-algorithm/'
     },
     {
         text: 'Java',

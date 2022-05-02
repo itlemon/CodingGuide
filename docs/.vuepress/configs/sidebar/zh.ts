@@ -13,36 +13,73 @@ export const zh: SidebarConfig = {
     ],
     '/resources/data-structure-and-algorithm/': [
         {
-            text: '数据结构',
-            link: '/resources/data-structure-and-algorithm/data-structure/',
-            collapsible: true,
-            children: [
-                '01为什么要学习数据结构.md',
-                '02数组.md',
-                '03链表.md',
-            ],
-        },
-        {
-            text: '算法',
-            link: '/resources/data-structure-and-algorithm/algorithm/',
+            text: '阅读指南',
+            link: '/resources/data-structure-and-algorithm/',
             collapsible: true,
             children: [
                 {
-                    text: '数组',
+                    text: '第一章 数组',
                     children: [
-                        '01数组类算法题.md',
-                        '02链表类算法题.md',
-                        '03二叉树类算法题.md'
+                        '1-1数组的理论基础.md',
+                        '1-2常见的数组算法题.md'
                     ]
                 },
                 {
-                    text: '其他',
+                    text: '第二章 链表',
                     children: [
-                        '01数组类算法题.md',
-                        '02链表类算法题.md',
-                        '03二叉树类算法题.md'
+                        '2-1链表的理论基础.md',
+                        '2-2常见的链表算法题.md'
                     ]
-                }
+                },
+                {
+                    text: '第三章 哈希表',
+                    children: [
+                        '3-1哈希表的理论基础.md',
+                        '3-2常见的哈希表算法题.md'
+                    ]
+                },
+                {
+                    text: '第四章 字符串',
+                    children: [
+                        '4-1字符串的理论基础.md',
+                        '4-2常见的字符串算法题.md'
+                    ]
+                },
+                {
+                    text: '第五章 栈与队列',
+                    children: [
+                        '5-1栈与队列的理论基础.md',
+                        '5-2常见的栈与队列算法题.md'
+                    ]
+                },
+                {
+                    text: '第六章 二叉树',
+                    children: [
+                        '6-1二叉树的理论基础.md',
+                        '6-2常见的二叉树算法题.md'
+                    ]
+                },
+                {
+                    text: '第七章 回溯算法',
+                    children: [
+                        '7-1回溯算法的理论基础.md',
+                        '7-2常见的回溯算法题.md'
+                    ]
+                },
+                {
+                    text: '第八章 贪心算法',
+                    children: [
+                        '8-1贪心算法的理论基础.md',
+                        '8-2常见的贪心算法题.md'
+                    ]
+                },
+                {
+                    text: '第九章 动态规划',
+                    children: [
+                        '9-1动态规划的理论基础.md',
+                        '9-2常见的动态规划算法题.md'
+                    ]
+                },
             ],
         },
     ],
@@ -120,5 +157,5 @@ export const zh: SidebarConfig = {
             text: '其他',
             link: '/resources/middleware/other/'
         }
-    ]
+    ],
 }
