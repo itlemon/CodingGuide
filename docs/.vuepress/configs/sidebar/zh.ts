@@ -13,7 +13,7 @@ export const zh: SidebarConfig = {
     ],
     '/resources/data-structure-and-algorithm/': [
         {
-            text: '据结构',
+            text: '数据结构',
             link: '/resources/data-structure-and-algorithm/data-structure/',
             collapsible: true,
             children: [
