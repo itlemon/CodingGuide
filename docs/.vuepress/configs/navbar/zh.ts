@@ -26,7 +26,7 @@ export const zh: NavbarConfig = [
         text: '中间件',
         children: [
             {
-                text: 'RocketMQ',
+                text: 'Netty',
                 link: '/resources/middleware/netty/'
             },
             {
