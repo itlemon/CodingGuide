@@ -163,6 +163,24 @@ export const zh: SidebarConfig = {
             ],
         },
         {
+            text: 'Netty',
+            link: '/resources/middleware/netty/',
+            collapsible: true,
+            children: [
+                '01什么是Netty.md',
+                '02Netty服务端启动流程.md',
+                '03Netty任务执行器NioEventLoop分析.md',
+                '04Netty中Channel事件触发管道Pipeline分析.md',
+                '05Netty是如何检测新连接接入.md',
+                '06Netty字节缓冲池ByteBuffer.md',
+                '07Netty中数据解码和编码分析.md',
+                '08Netty优化工具类分析.md',
+                '09Netty中涉及的设计模式.md',
+                '10Netty中涉及的数据结构与算法.md',
+                '11如何使用Netty设计RPC框架.md'
+            ],
+        },
+        {
             text: '其他',
             link: '/resources/middleware/other/'
         }
