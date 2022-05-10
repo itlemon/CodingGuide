@@ -6,6 +6,7 @@ import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {nprogressPlugin} from '@vuepress/plugin-nprogress'
 import {gitPlugin} from '@vuepress/plugin-git'
+import {iconifyPlugin} from 'vuepress-plugin-iconify'
 import {navbar, sidebar} from './configs'
 
 export default defineUserConfig({
@@ -73,7 +74,7 @@ export default defineUserConfig({
         logo: 'https://vuejs.org/images/logo.png',
         repo: 'itlemon/CodingGuide',
         docsBranch: 'master',
-        repoLabel: 'GitHub',
+        repoLabel: '<vp-icon icon="fa:github" width="50" color="#24292f" />',
         docsDir: 'docs',
         locales: {
             '/': {
@@ -200,6 +201,7 @@ export default defineUserConfig({
         // git插件，这里主要是为了禁止收集部分信息
         gitPlugin({
             contributors: false
-        })
+        }),
+        iconifyPlugin({})
     ]
 })
