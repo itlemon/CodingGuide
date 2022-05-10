@@ -202,6 +202,8 @@ export default defineUserConfig({
         gitPlugin({
             contributors: false
         }),
-        copyCodePlugin({})
+        copyCodePlugin({
+            selector: '.theme-default-content div[class*=language-] pre'
+        })
     ]
 })
