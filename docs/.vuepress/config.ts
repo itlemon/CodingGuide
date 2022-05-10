@@ -6,7 +6,6 @@ import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {nprogressPlugin} from '@vuepress/plugin-nprogress'
 import {gitPlugin} from '@vuepress/plugin-git'
-import {copyCodePlugin} from "vuepress-plugin-copy-code2"
 import {navbar, sidebar} from './configs'
 
 export default defineUserConfig({
@@ -201,12 +200,6 @@ export default defineUserConfig({
         // git插件，这里主要是为了禁止收集部分信息
         gitPlugin({
             contributors: false
-        }),
-        // 代码拷贝插件
-        copyCodePlugin({
-            selector: '.theme-default-content div[class*=language-] pre',
-            showInMobile: true
-        }),
-
+        })
     ]
 })
