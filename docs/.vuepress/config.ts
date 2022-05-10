@@ -204,8 +204,7 @@ export default defineUserConfig({
         }),
         copyCodePlugin({
             selector: '.theme-default-content div[class*=language-] pre',
-            showInMobile: true,
-            pure: true
+            showInMobile: true
         })
     ]
 })
