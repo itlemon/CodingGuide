@@ -7,6 +7,7 @@ import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {nprogressPlugin} from '@vuepress/plugin-nprogress'
 import {gitPlugin} from '@vuepress/plugin-git'
 import {copyCodePlugin} from "vuepress-plugin-copy-code2"
+import {readingTimePlugin} from "vuepress-plugin-reading-time2"
 import {navbar, sidebar} from './configs'
 
 export default defineUserConfig({
@@ -202,9 +203,12 @@ export default defineUserConfig({
         gitPlugin({
             contributors: false
         }),
+        // 代码拷贝插件
         copyCodePlugin({
             selector: '.theme-default-content div[class*=language-] pre',
             showInMobile: true
-        })
+        }),
+        // 阅读时间插件
+        readingTimePlugin({})
     ]
 })
