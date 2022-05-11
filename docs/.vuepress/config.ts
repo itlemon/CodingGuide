@@ -6,6 +6,7 @@ import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {nprogressPlugin} from '@vuepress/plugin-nprogress'
 import {gitPlugin} from '@vuepress/plugin-git'
+import {commentPlugin} from "vuepress-plugin-comment2"
 import {navbar, sidebar} from './configs'
 
 export default defineUserConfig({
@@ -201,5 +202,13 @@ export default defineUserConfig({
         gitPlugin({
             contributors: false
         }),
+        // 评论插件
+        commentPlugin({
+            type: "giscus",
+            repo: 'itlemon/CodingGuide',
+            repoId: 'R_kgDOHL9MTw',
+            category: 'Announcements',
+            categoryId: 'DIC_kwDOHL9MT84CPCek'
+        })
     ]
 })
