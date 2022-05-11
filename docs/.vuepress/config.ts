@@ -208,7 +208,8 @@ export default defineUserConfig({
             repo: 'itlemon/CodingGuide',
             repoId: 'R_kgDOHL9MTw',
             category: 'Announcements',
-            categoryId: 'DIC_kwDOHL9MT84CPCek'
+            categoryId: 'DIC_kwDOHL9MT84CPCek',
+            comment: true
         })
     ]
 })
