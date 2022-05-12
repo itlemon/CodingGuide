@@ -7,7 +7,7 @@ import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {nprogressPlugin} from '@vuepress/plugin-nprogress'
 import {gitPlugin} from '@vuepress/plugin-git'
 import {copyCodePlugin} from "vuepress-plugin-copy-code2"
-// import {commentPlugin} from "vuepress-plugin-comment2"
+import {commentPlugin} from "vuepress-plugin-comment2"
 import {navbar, sidebar} from './configs'
 
 export default defineUserConfig({
@@ -208,14 +208,14 @@ export default defineUserConfig({
             selector: '.theme-default-content div[class*=language-] pre',
             showInMobile: true
         }),
-        // // 评论插件
-        // commentPlugin({
-        //     type: "giscus",
-        //     repo: 'itlemon/CodingGuide',
-        //     repoId: 'R_kgDOHL9MTw',
-        //     category: 'Announcements',
-        //     categoryId: 'DIC_kwDOHL9MT84CPCek',
-        //     comment: true
-        // })
+        // 评论插件
+        commentPlugin({
+            type: "giscus",
+            repo: 'itlemon/CodingGuide',
+            repoId: 'R_kgDOHL9MTw',
+            category: 'Announcements',
+            categoryId: 'DIC_kwDOHL9MT84CPCek',
+            comment: true
+        })
     ]
 })
