@@ -28,6 +28,6 @@
     "sass-loader": "^12.6.0",
     "vue": "3.2.33",
     "vuepress-plugin-copy-code2": "workspace:*",
-    "vuepress-plugin-comment2": "workspace:*",
+    "vuepress-plugin-comment2": "workspace:*"
   }
 }
