@@ -31,18 +31,17 @@ yarn dev
 
 第四步：服务器部署
 
-:::: code-group
-::: code-group-item Linux
+- Linux
+
 ```shell
 ./deploy.sh
 ```
-:::
-::: code-group-item Other
+
+- 其他系统
+
 ```shell
 nohup yarn serve &
 ```
-:::
-::::
 
 服务器部署方式默认端口是4000
 
