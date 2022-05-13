@@ -9,6 +9,8 @@
 
 ## 使用教程
 
+基础环境要求：[Node.js V14+](https://nodejs.org/en/)
+
 第一步：克隆项目
 
 ```shell
@@ -33,13 +35,27 @@ yarn dev
 
 - Linux
 
+使用部署脚本可以完成一键github拉取、打包、部署：
+
 ```shell
 ./deploy.sh
 ```
 
-- 其他系统
+Linux 或者 macOS 还可以使用命令：
 
 ```shell
+git pull
+yarn build
+nohup yarn serve &
+```
+
+- Windows
+
+Windows用户请使用命令：
+
+```shell
+git pull
+yarn build
 nohup yarn serve &
 ```
 
