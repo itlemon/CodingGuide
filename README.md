@@ -56,7 +56,7 @@ Windows用户请使用命令：
 ```shell
 git pull
 yarn build
-nohup yarn serve &
+start yarn serve &
 ```
 
 服务器部署方式默认端口是4000
