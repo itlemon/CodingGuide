@@ -1,5 +1,5 @@
 import {defineUserConfig} from 'vuepress'
-import {defaultTheme} from '@vuepress/theme-default'
+// import {defaultTheme} from '@vuepress/theme-default'
 import {docsearchPlugin} from '@vuepress/plugin-docsearch'
 import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
 import {pwaPlugin} from '@vuepress/plugin-pwa'
@@ -7,7 +7,9 @@ import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {nprogressPlugin} from '@vuepress/plugin-nprogress'
 import {gitPlugin} from '@vuepress/plugin-git'
 import {copyCodePlugin} from "vuepress-plugin-copy-code2"
+import {commentPlugin} from "vuepress-plugin-comment2"
 import {navbar, sidebar} from './configs'
+import {codingGuideTheme} from "./theme"
 
 export default defineUserConfig({
     // 站点配置
@@ -70,7 +72,7 @@ export default defineUserConfig({
     ],
 
     // 主题和它的配置
-    theme: defaultTheme({
+    theme: codingGuideTheme({
         logo: 'https://vuejs.org/images/logo.png',
         repo: 'itlemon/CodingGuide',
         docsBranch: 'master',
@@ -202,9 +204,19 @@ export default defineUserConfig({
         gitPlugin({
             contributors: false
         }),
+        // 代码拷贝插件
         copyCodePlugin({
             selector: '.theme-default-content div[class*=language-] pre',
             showInMobile: true
+        }),
+        // 评论插件
+        commentPlugin({
+            type: "giscus",
+            repo: 'itlemon/CodingGuide',
+            repoId: 'R_kgDOHL9MTw',
+            category: 'Announcements',
+            categoryId: 'DIC_kwDOHL9MT84CPCek',
+            comment: true
         })
     ]
 })
