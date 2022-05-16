@@ -11,6 +11,28 @@ export const zh: SidebarConfig = {
             ],
         }
     ],
+    '/resources/bigdata/': [
+        {
+            text: 'sql面试题',
+            link:'/resources/bigdata/hsql',
+            children: [
+                '1-行列转换.md',
+                '2-排名取它值.md',
+                '3-累计求值.md',
+                '4-窗口大小的控制.md',
+                '5-不使用distinct和group by分组.md',
+                'README.md'
+            ],
+        },
+        {
+            text: 'hive sql函数总结',
+            link:'/resources/bigdata/hsql',
+            children: [
+
+                'README.md'
+            ],
+        }
+    ],
     '/resources/data-structure-and-algorithm/': [
         {
             text: '阅读指南',
