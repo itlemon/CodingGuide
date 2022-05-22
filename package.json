@@ -14,18 +14,18 @@
     "serve": "anywhere -h localhost -p 4000 -d docs/.vuepress/dist"
   },
   "devDependencies": {
-    "@vuepress/plugin-docsearch": "^2.0.0-beta.43",
-    "@vuepress/plugin-git": "^2.0.0-beta.43",
-    "@vuepress/plugin-google-analytics": "^2.0.0-beta.43",
-    "@vuepress/plugin-nprogress": "^2.0.0-beta.43",
-    "@vuepress/plugin-pwa": "^2.0.0-beta.43",
-    "@vuepress/plugin-pwa-popup": "^2.0.0-beta.43",
+    "@vuepress/plugin-docsearch": "^2.0.0-beta.45",
+    "@vuepress/plugin-git": "^2.0.0-beta.45",
+    "@vuepress/plugin-google-analytics": "^2.0.0-beta.45",
+    "@vuepress/plugin-nprogress": "^2.0.0-beta.45",
+    "@vuepress/plugin-pwa": "^2.0.0-beta.45",
+    "@vuepress/plugin-pwa-popup": "^2.0.0-beta.45",
+    "@vuepress/theme-default": "2.0.0-beta.45",
     "anywhere": "^1.6.0",
-    "@vuepress/theme-default": "2.0.0-beta.43",
-    "vuepress": "^2.0.0-beta.43",
-    "sass-loader": "^12.6.0",
-    "vue": "3.2.33",
-    "vuepress-plugin-copy-code2": "workspace:*",
-    "vuepress-plugin-comment2": "workspace:*"
+    "sass-loader": "^10.0.0-rc.0",
+    "vue": "^3.2.33",
+    "vuepress": "^2.0.0-beta.45",
+    "vuepress-plugin-comment2": "workspace:*",
+    "vuepress-plugin-copy-code2": "workspace:*"
   }
 }
