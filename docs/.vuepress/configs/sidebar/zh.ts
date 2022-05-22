@@ -206,7 +206,8 @@ export const zh: SidebarConfig = {
                 '11Netty部分优化工具类分析.md',
                 '12Netty中涉及的数据结构与算法.md',
                 '13Netty中涉及的设计模式.md',
-                '14Netty案例分析'
+                '14-1Netty在RPC框架中的应用.md',
+                '14-2Netty在RocketMQ中应用.md'
             ],
         },
         {
