@@ -46,5 +46,14 @@ export const zh: NavbarConfig = [
     {
         text: '缓存',
         link: '/resources/cache/'
-    }
+    },
+    {
+        text: '大数据',
+        children: [
+            {
+                text: 'hsql',
+                link: '/resources/bigdata/hsql/'
+            }
+        ]
+    },
 ]
