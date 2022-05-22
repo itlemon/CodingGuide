@@ -1,8 +1,6 @@
 # 为什么要学习Netty
 
-
-
-![components](https://gitee.com/itlemon/itlemon-drawing-bed/raw/master/img/components.png)
+![netty_fun](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/netty_fun.png)
 
 ## Netty在开源项目中贡献
 
