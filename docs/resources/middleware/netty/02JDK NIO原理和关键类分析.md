@@ -194,17 +194,19 @@ public abstract SelectionKey register(Selector sel, int ops, Object att)
 
   Buffer是一个缓存对象，所有的数据写入或写出都是先写入到Buffer对象，然后再通过Channel进行数据传输，而流方式是可以直接将数据写入到Stream对象中。Buffer内部本质就是一个数组，是一个抽象类，具体实现包含多种：ByteBuffer、IntBuffer、ShorBuffer、CharacterBuffer，同时也分为堆内和堆外等等。
   
-  ![image-20220522195631057](F:/softwore/picGo/img/image-20220522195631057.png)
+  ![image-20220522195631057](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20220522195631057.png)
 
 
 
 Buffer类中三个核心属性：position、limit 以及capacity。position表示当前可以读或者可以写的起始点，limit表示不可读或不可以写的第一个下标，capacity则表示Buffer的容量大小。其中大小关系0<=position<=limit<=capacity。具体是如何使用的呢？现假如以读数据的场景来描述（写同理）：
 
 - 起初时：position值为0，limit和capacity值大小均是Buffer容量大小；
+
 - 当不断进行数据读取时，此时position发生位置移动，而limit和capacity大小不变；
+
 - 当需要读取出Buffer中数据时，需要进行数据flip反转，此时position变为0，limit变成之前position位置，limit-position区间表示可以读取的数据。
 
-![image-20220522201459970](F:/softwore/picGo/img/image-20220522201459970.png)
+  ![image-20220522201459970](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20220522201459970.png)
 
 
 
