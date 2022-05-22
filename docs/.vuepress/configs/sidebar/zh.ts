@@ -43,7 +43,11 @@ export const zh: SidebarConfig = {
                     collapsible: true,
                     children: [
                         '1-1数组的理论基础.md',
-                        '1-2常见的数组算法题.md'
+                        '1-2数组基础算法题.md',
+                        '1-3数组十大排序算法.md',
+                        '1-4数组的二分查找算法.md',
+                        '1-5数组的双指针算法.md',
+                        '1-6数组的滑动窗口算法.md'
                     ]
                 },
                 {
