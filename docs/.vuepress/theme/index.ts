@@ -13,6 +13,6 @@ export const codingGuideTheme = (options: DefaultThemeOptions): Theme => ({
     layouts: {
         // we override the default layout to provide comment service
         Layout: path.resolve(__dirname, "layouts", "Layout.vue"),
-        // 404: path.resolve(__dirname, "layouts", "404.vue"),
+        404: path.resolve(__dirname, "layouts", "404.vue"),
     },
 });
