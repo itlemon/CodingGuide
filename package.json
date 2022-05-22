@@ -21,7 +21,7 @@
     "@vuepress/plugin-pwa": "^2.0.0-beta.45",
     "@vuepress/plugin-pwa-popup": "^2.0.0-beta.45",
     "@vuepress/theme-default": "2.0.0-beta.45",
-     "vuepress-vite": "2.0.0-beta.45",
+    "vuepress-vite": "2.0.0-beta.45",
     "@vueuse/core": "^5.0.0",
     "anywhere": "^1.6.0",
     "sass-loader": "^12.6.0",
