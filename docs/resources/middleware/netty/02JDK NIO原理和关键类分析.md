@@ -6,7 +6,7 @@
 
 ## 什么是NIO
 
-在介绍Netty之前，我们需要先学习下什么是NIO？有的书籍中又称之为新I/O(New Input Output),原因是相对于之前版本的I/O库而言，它是一种新增的I/O模型，这也是官方的叫法。有的书籍中称之为非堵塞I/O(Non-Blocking Input Output)，因为相对于之前的传统的I/O模型来说，它设计的目标就是让java支持非堵塞I/O，所以很多场景下又有人称之为非堵塞I/O,个人理解堵塞和非堵塞的叫法主要是体现在read数据层面。接下来学习NIO中在java层面的具体实现。
+在介绍Netty之前，首先学习下什么是NIO是非常有必要的。有的地方称NIO为新I/O(New Input Output),原因是相对于之前版本的I/O库而言，它是一种新增的I/O模型，这也是官方的叫法。有的又称之为非堵塞I/O(Non-Blocking Input Output)，因为相对于之前的传统的I/O模型来说，它设计的目标就是让java支持非堵塞I/O，所以很多场景下又有人称之为非堵塞I/O。个人理解堵塞和非堵塞的叫法主要是体现在read数据层面，称之为非堵塞I/O更合适。接下来学习NIO中在java层面包含哪些类，这些类之间又是如何实现的功能的。
 
 
 
@@ -18,13 +18,13 @@
   A multiplexor of {@link SelectableChannel} objects.
   ```
 
-  Selector 是针对SelectableChannel对象的多路复用器，SelectableChannel将自己感兴趣的事件注册到Selector上，随后Selector通过轮询SelectableChannel的方式，判断SelectableChannel是否有感兴趣的事件已就绪。如果有，则通过SelectionKey获取相应事件和SelectableChannel。
+  Selector 是针对SelectableChannel对象的多路复用器，SelectableChannel将相关事件注册到Selector上，随后Selector通过轮询SelectableChannel，判断SelectableChannel是否有存在就绪事件。如果存在，则通过SelectionKey获取相应Selector和SelectableChannel，执行相关事件逻辑。
 
   
 
-  一个多路复用器可以注册多个SelectChannel，其原理图如下所示。可以注册SelectableChannel包含ServerSocketChannel和多个SocketChannel，Selector通过不断地轮询出感兴趣的就绪事件。所谓就绪事件是指可以进行数据的读取或者数据的写出或者有客户端链接（轮询的方式有select、poll以及epoll ，不同的轮询方式低层对应的数据结构也不同）。
+  一个多路复用器可以注册多个SelectChannel，其原理图如下所示：![image-20220522150540397](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20220522150540397.png)
 
-  ![image-20220522150540397](F:/softwore/picGo/img/image-20220522150540397.png)
+  注册的SelectableChannel包含ServerSocketChannel和多个SocketChannel，Selector通过不断地轮询出注册的就绪事件。所谓就绪事件是指可以进行数据的读取或者数据的写出或者有客户端链接（轮询的方式有select、poll以及epoll ，不同的轮询方式低层对应的数据结构也不同）。
 
   
 
@@ -74,7 +74,7 @@
   A nexus for I/O operations.
   ```
 
-​    Channel 针对IO操作的通道，用于数据的输入和输出，它与流的不同之处在于通道是双向的，而流是单向的，包含输入和输出流。下图为Chanel 类图，包含客户端的Chanel和服务端Channel，共同继承AbstractSelectableChannel、SelectableChannel,共同的接口为Channel。
+Channel 是针对IO操作的通道，用于数据的输入和输出，它和流之间的不同之处在于通道是双向的，而流是单向的，如流包含输入和输出流。下图为Chanel 类图，包含客户端的Chanel和服务端Channel，共同继承AbstractSelectableChannel、SelectableChannel,共同的接口为Channel。
 
 ![image-20220522193045443](F:/softwore/picGo/img/image-20220522193045443.png)
 
@@ -192,13 +192,17 @@ public abstract SelectionKey register(Selector sel, int ops, Object att)
 
 - Buffer
 
-  Buffer是一个缓存对象，所有的数据写入或者写出都是先写入到Buffer对象，然后再通过Channel进行数据的传输，而流方式时是可以直接将对象写入到Stream对象中。Buffer本质就是一个数组，具体实现包含很多ByteBuffer、IntBuffer、ShorBuffer、CharacterBuffer，也分为堆内和堆外等等。
+  Buffer是一个缓存对象，所有的数据写入或写出都是先写入到Buffer对象，然后再通过Channel进行数据传输，而流方式是可以直接将数据写入到Stream对象中。Buffer内部本质就是一个数组，是一个抽象类，具体实现包含多种：ByteBuffer、IntBuffer、ShorBuffer、CharacterBuffer，同时也分为堆内和堆外等等。
   
   ![image-20220522195631057](F:/softwore/picGo/img/image-20220522195631057.png)
 
 
 
-Buffer中三个核心属性：position、limit 以及capacity。position表示当前可以读或者可以写的起始点，limit表示不可读的第一个下标或者不可以写第一个下标，capacity则表示Buffer的容量大小，其中大小关系0<=position<=limit<=capacity。现假如以读数据的场景来描述（写同理）：起初时：position值为0，limit和capacity值大小均是Buffer容量大小；当不断进行数据读取时，此时position发生位置移动，此时limit和capacity大小不变；当需要读取出Buffer中数据时，需要进行数据flip反转，此时position变为0，limit变成之前position位置，limit-position大小表示可以读取数据大小。
+Buffer类中三个核心属性：position、limit 以及capacity。position表示当前可以读或者可以写的起始点，limit表示不可读或不可以写的第一个下标，capacity则表示Buffer的容量大小。其中大小关系0<=position<=limit<=capacity。具体是如何使用的呢？现假如以读数据的场景来描述（写同理）：
+
+- 起初时：position值为0，limit和capacity值大小均是Buffer容量大小；
+- 当不断进行数据读取时，此时position发生位置移动，而limit和capacity大小不变；
+- 当需要读取出Buffer中数据时，需要进行数据flip反转，此时position变为0，limit变成之前position位置，limit-position区间表示可以读取的数据。
 
 ![image-20220522201459970](F:/softwore/picGo/img/image-20220522201459970.png)
 
@@ -284,7 +288,7 @@ Buffer中三个核心属性：position、limit 以及capacity。position表示�
   * A token representing the registration of a {@link SelectableChannel} with a* {@link Selector}.
   ```
   
-  用于呈现一个Channle注册到Selector的标识，其实就是表示一个Channle注册到Selector的一个事件，这个类同时绑定了Selector和Channel。
+  用于呈现一个Channle注册到Selector的令牌，具体表示其实就是表示一个Channel注册到Selector的事件，这个类同时绑定了Selector和Channel。
   
   
   
@@ -327,7 +331,7 @@ Buffer中三个核心属性：position、limit 以及capacity。position表示�
 
 ## JDK NIO实现Server-Client IO通讯案例
 
-上面讲述了在java JDK层面实现NIO的一些核心类和相关的API,那如何将这些API使用起来呢？现在采取上述API简单的实现一个客户端和服务端的通信。
+上面讲述了在java JDK层面实现NIO的一些核心类和相关的API,那如何将这些API串起来呢？现在采取上述API简单的实现一个客户端和服务端的通信案例。
 
 
 
@@ -431,12 +435,14 @@ public static void main(String[] args) throws IOException {
 
 #### 处理逻辑
 
-- 开启Selector
-- 开启ServerSocketChannel
-- 注册为非堵塞，绑定ACCEPT事件
-- 循环轮询就绪的Key,进行Accept 
-- 获取SocketChannel,注册非堵塞，绑定READ事件
-- 处理Read事件和注册写事件，进行输出
+- 开启Selector；
+- 开启ServerSocketChannel；
+- 注册为非堵塞，绑定ACCEPT事件；
+- 循环轮询就绪的Key,进行Accept；
+- 获取SocketChannel,注册非堵塞，绑定READ事件；
+- 处理Read事件和注册写事件，进行输出。
+
+![image-20220522221345263](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20220522221345263.png)
 
 ### 客户端
 
@@ -523,10 +529,10 @@ public static void main(String[] args) throws IOException {
 
 #### 处理逻辑
 
-- 开启Selector
-- 开启ServerSocketChannel
-- 注册为非堵塞，绑定CONNECT事件
-- 循环轮询就绪的Key,进行connect
-- 对SocketChannel，绑定READ事件
-- 处理Read事件和注册写事件，进行输出
+- 开启Selector；
+- 开启ServerSocketChannel；
+- 注册为非堵塞，绑定CONNECT事件；
+- 循环轮询就绪的Key,进行connect；
+- 对SocketChannel，绑定READ事件；
+- 处理Read事件和注册写事件，进行输出。
 
