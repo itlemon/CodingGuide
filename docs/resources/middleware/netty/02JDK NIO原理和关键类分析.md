@@ -76,7 +76,7 @@
 
 Channel 是针对IO操作的通道，用于数据的输入和输出，它和流之间的不同之处在于通道是双向的，而流是单向的，如流包含输入和输出流。下图为Chanel 类图，包含客户端的Chanel和服务端Channel，共同继承AbstractSelectableChannel、SelectableChannel,共同的接口为Channel。
 
-![image-20220522193045443](F:/softwore/picGo/img/image-20220522193045443.png)
+![image-20220522193045443](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20220522193045443.png)
 
 
 
