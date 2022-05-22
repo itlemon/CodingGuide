@@ -24,7 +24,7 @@
 
   一个多路复用器可以注册多个SelectChannel，其原理图如下所示。可以注册SelectableChannel包含ServerSocketChannel和多个SocketChannel，Selector通过不断地轮询出感兴趣的就绪事件。所谓就绪事件是指可以进行数据的读取或者数据的写出或者有客户端链接（轮询的方式有select、poll以及epoll ，不同的轮询方式低层对应的数据结构也不同）。
 
-  ![image-20220522150540397](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20220522150540397.png)
+  ![image-20220522150540397](F:/softwore/picGo/img/image-20220522150540397.png)
 
   
 
@@ -76,7 +76,7 @@
 
 ​    Channel 针对IO操作的通道，用于数据的输入和输出，它与流的不同之处在于通道是双向的，而流是单向的，包含输入和输出流。下图为Chanel 类图，包含客户端的Chanel和服务端Channel，共同继承AbstractSelectableChannel、SelectableChannel,共同的接口为Channel。
 
-![image-20220522193045443](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20220522193045443.png)
+![image-20220522193045443](F:/softwore/picGo/img/image-20220522193045443.png)
 
 
 
@@ -194,51 +194,15 @@ public abstract SelectionKey register(Selector sel, int ops, Object att)
 
   Buffer是一个缓存对象，所有的数据写入或者写出都是先写入到Buffer对象，然后再通过Channel进行数据的传输，而流方式时是可以直接将对象写入到Stream对象中。Buffer本质就是一个数组，具体实现包含很多ByteBuffer、IntBuffer、ShorBuffer、CharacterBuffer，也分为堆内和堆外等等。
   
-  ![image-20220522195631057](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20220522195631057.png)
+  ![image-20220522195631057](F:/softwore/picGo/img/image-20220522195631057.png)
 
 
 
 Buffer中三个核心属性：position、limit 以及capacity。position表示当前可以读或者可以写的起始点，limit表示不可读的第一个下标或者不可以写第一个下标，capacity则表示Buffer的容量大小，其中大小关系0<=position<=limit<=capacity。现假如以读数据的场景来描述（写同理）：起初时：position值为0，limit和capacity值大小均是Buffer容量大小；当不断进行数据读取时，此时position发生位置移动，此时limit和capacity大小不变；当需要读取出Buffer中数据时，需要进行数据flip反转，此时position变为0，limit变成之前position位置，limit-position大小表示可以读取数据大小。
 
-![image-20220522201459970](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20220522201459970.png)
+![image-20220522201459970](F:/softwore/picGo/img/image-20220522201459970.png)
 
 
-
-#### ServerSocketChannel核心API 
-
-核心API功能介绍如下
-
-```java
-/**创建一个ServerSocketChannel 函数*/ 
-public static ServerSocketChannel open() throws IOException {
-    return SelectorProvider.provider().openServerSocketChannel();
-}
-
-/** 是否是一个有效的操作*/
-public final int validOps() {
-    return SelectionKey.OP_ACCEPT;
-}
-
-/**监听一个端口*/
-public abstract ServerSocketChannel bind(SocketAddress local, int backlog)
-    throws IOException;
-
-/**网络传输一些参数设置*/
-public abstract <T> ServerSocketChannel setOption(SocketOption<T> name, T value)
-    throws IOException;
-
-/**建立一个服务端连接*/
-public abstract SocketChannel accept() throws IOException;
-
-/**
-注册一个Channel事件到Selector
-*/
-public abstract SelectionKey register(Selector sel, int ops, Object att);
-
-/**设置是否是堵塞IO*/
-public final SelectableChannel configureBlocking(boolean block);
-
-```
 
 #### Buffer核心API 
 
@@ -314,7 +278,7 @@ public final SelectableChannel configureBlocking(boolean block);
 
 
 
-- SelectionKey
+- **SelectionKey**
 
   ```html
   * A token representing the registration of a {@link SelectableChannel} with a* {@link Selector}.
@@ -361,7 +325,7 @@ public final SelectableChannel configureBlocking(boolean block);
   
   
 
-## 如何通过JDK NIO实现IO通讯
+## JDK NIO实现Server-Client IO通讯案例
 
 上面讲述了在java JDK层面实现NIO的一些核心类和相关的API,那如何将这些API使用起来呢？现在采取上述API简单的实现一个客户端和服务端的通信。
 
