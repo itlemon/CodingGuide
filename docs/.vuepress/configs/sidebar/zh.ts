@@ -195,7 +195,7 @@ export const zh: SidebarConfig = {
             children: [
                 '01为什么要学习Netty.md',
                 '02JDK NIO原理和关键类分析.md',
-                '03 线程Reactor模型在Netty中应用分析.md',
+                '03线程模型Reactor在Netty中应用分析.md',
                 '04Netty服务端启动流程.md',
                 '05Netty任务执行器NioEventLoop分析.md',
                 '06Netty触发事件管道Pipeline分析.md',
