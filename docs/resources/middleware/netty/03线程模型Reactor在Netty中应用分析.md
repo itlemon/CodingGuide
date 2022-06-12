@@ -6,7 +6,7 @@
 
 ## Netty 和 JDK NIO之间的联系
 
-在之前***02JDK NIO原理和关键类分析***章节中详细的论述了NIO在java中实现，不知道大家是否理解java NIO中和几个重要类之间的关系。
+在之前***02JDK NIO原理和关键类分析***章节中详细论述了NIO在java中实现，不知道大家是否理解java NIO中和几个重要类之间的关系。
 
 请大家思考下，为什么学习Netty之前需要先学习java NIO中的知识点和线程模型Reactor？其实Netty本质是结合线程Reactor模型，实现对JDK NIO包装，设计出来的网络通讯组件。接下来让我们一起进入Reactor模型世界。
 
@@ -43,7 +43,7 @@ Reactor模型它既不是java专属模型，也不是Netty中自创模型。它�
 
 #### Basic Reactor Design
 
-Basic Reactor Design 是基本Reactor设计，它是一种Reactor单线程模型。它的新客户端连接、读以及写均在同一个线程中。Reactor充当多路复⽤器⻆⾊，监听多路连接的请求，由单线程完成Reactor收到客户端发来的请求，如果事件类型是ACCEPT,则分发给acceptor完成；其它读写逻辑分发给Handler完成，包括读、解码、计算、编码以及发送操作。
+Basic Reactor Design 基本Reactor设计，它是一种Reactor单线程模型。它的新客户端连接、读以及写均在同一个线程中。Reactor充当多路复⽤器⻆⾊，监听多路连接的请求，由单线程完成Reactor收到客户端发来的请求，如果事件类型是ACCEPT,则分发给acceptor完成；其它读写逻辑分发给Handler完成，包括读、解码、计算、编码以及发送操作。
 
 ![single-Reactor](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/single-Reactor.png)
 
@@ -56,7 +56,7 @@ Basic Reactor Design 是基本Reactor设计，它是一种Reactor单线程模型
 
 #### Multithreaded Designs
 
-Multithreaded Designs是多线程Reactor模型，这种模型和以上单线程模型相比，实质是处理逻辑多了一个ThreadPool。Reactor将所有的读处理逻辑放入至线程池中，充分利用机器多CPU资源，提高了并发能力。
+Multithreaded Designs多线程Reactor模型，这种模型和以上单线程模型相比，实质是处理逻辑多了一个ThreadPool。Reactor将所有的读处理逻辑放入至线程池中，充分利用机器多CPU资源，提高了并发能力。
 
 ![multthread-reactor](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/multthread-reactor.png)
 
@@ -74,7 +74,7 @@ Multithreaded Designs是多线程Reactor模型，这种模型和以上单线程�
 
 #### Multiple Reactor Threads
 
-Multiple Reactor Threads 是多Reactor模型，该模型中Reactor分为主和子Reactor，将连接事件、读写事件进行分离，充分体现了分治思想。
+Multiple Reactor Threads 多Reactor模型，该模型中Reactor分为主和子Reactor，将连接事件、读写事件进行分离，充分体现了分治思想。
 
 ![multreactor](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/multreactor.png)
 
@@ -88,7 +88,7 @@ Multiple Reactor Threads 是多Reactor模型，该模型中Reactor分为主和�
 
 ## Netty中线程模型
 
-Reactor模型有以上三个版本，那Netty中采取了Reactor模型中哪种思想呢？很显然如下图所示，Netty最终选择了多Reactor模型。Netty线程模型中也有主Reactor、Acceptor、subReactor。主Reactor负责连接事件；随后交由Acceptor操作读写subReactor初始化工作；subReactor进行读写事件处理。
+Reactor模型有以上三个版本，那Netty中采取了Reactor模型中哪种思想呢？很显然如下图所示，Netty最终选择了多Reactor模型。Netty线程模型中也有主Reactor、Acceptor、subReactor。主Reactor负责监听连接事件；随后交由Acceptor操作读写subReactor初始化工作；subReactor进行读写事件处理。
 
 ![netty-thread](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/netty-thread.png)
 
