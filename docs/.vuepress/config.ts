@@ -202,7 +202,7 @@ export default defineUserConfig({
         }),
         // 评论插件
         commentPlugin({
-            type: "giscus",
+            provider: "Giscus",
             repo: 'itlemon/CodingGuide',
             repoId: 'R_kgDOHL9MTw',
             category: 'Announcements',
