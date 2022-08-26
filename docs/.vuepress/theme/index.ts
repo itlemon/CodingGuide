@@ -8,8 +8,8 @@ import {fileURLToPath} from 'url';
 import {dirname} from 'path';
 
 // @ts-ignore
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+export const __filename = fileURLToPath(import.meta.url);
+export const __dirname = dirname(__filename);
 
 export const codingGuideTheme = (options: DefaultThemeOptions): Theme => ({
     name: "coding-guide-theme",
