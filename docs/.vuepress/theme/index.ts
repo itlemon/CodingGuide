@@ -4,12 +4,6 @@ import {path} from "@vuepress/utils";
 import type {Theme} from "@vuepress/core";
 import type {DefaultThemeOptions} from "@vuepress/theme-default";
 
-import {fileURLToPath} from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-
-const __dirname = path.dirname(__filename);
-
 export const codingGuideTheme = (options: DefaultThemeOptions): Theme => ({
     name: "coding-guide-theme",
 
