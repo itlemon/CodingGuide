@@ -7,10 +7,6 @@ import type {DefaultThemeOptions} from "@vuepress/theme-default";
 import {fileURLToPath} from 'url';
 import {dirname} from 'path';
 
-// @ts-ignore
-export const __filename = fileURLToPath(import.meta.url);
-export const __dirname = dirname(__filename);
-
 export const codingGuideTheme = (options: DefaultThemeOptions): Theme => ({
     name: "coding-guide-theme",
 
@@ -19,7 +15,7 @@ export const codingGuideTheme = (options: DefaultThemeOptions): Theme => ({
 
     layouts: {
         // we override the default layout to provide comment service
-        Layout: path.resolve(__dirname, "layouts", "Layout.vue"),
-        404: path.resolve(__dirname, "layouts", "404.vue")
+        Layout: path.resolve(dirname(fileURLToPath(import.meta.url)), "layouts", "Layout.vue"),
+        404: path.resolve(dirname(fileURLToPath(import.meta.url)), "layouts", "404.vue")
     },
 });
