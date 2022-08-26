@@ -4,6 +4,8 @@ import {path} from "@vuepress/utils";
 import type {Theme} from "@vuepress/core";
 import type {DefaultThemeOptions} from "@vuepress/theme-default";
 
+import {__dirname} from "./global";
+
 export const codingGuideTheme = (options: DefaultThemeOptions): Theme => ({
     name: "coding-guide-theme",
 
