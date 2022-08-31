@@ -100,7 +100,7 @@ export default defineUserConfig({
 
                 // a11y
                 openInNewWindow: '在新窗口打开',
-                toggleDarkMode: '切换夜间模式',
+                toggleColorMode: '切换颜色模式',
                 toggleSidebar: '切换侧边栏',
             }
         },
@@ -202,7 +202,7 @@ export default defineUserConfig({
         }),
         // 评论插件
         commentPlugin({
-            type: "giscus",
+            provider: "Giscus",
             repo: 'itlemon/CodingGuide',
             repoId: 'R_kgDOHL9MTw',
             category: 'Announcements',
