@@ -16,7 +16,7 @@
         <div class="bullshit__info">Please check that the URL you entered is correct, or click the button below to
           return to the homepage.
         </div>
-        <a href="/" class="bullshit__return-home">Back to Home</a>
+        <a href="/docs/.vuepress/public" class="bullshit__return-home">Back to Home</a>
       </div>
     </div>
   </div>

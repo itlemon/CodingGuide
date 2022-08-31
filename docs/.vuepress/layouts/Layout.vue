@@ -1,26 +1,26 @@
 <template>
   <ParentLayout>
     <template #page-bottom>
-      <CommentService :darkmode="isDarkmode"/>
+      <CommentService :darkmode="isDarkMode"/>
     </template>
   </ParentLayout>
 </template>
 <script setup lang="ts">
 import {onBeforeUnmount, onMounted, ref} from "vue";
-import ParentLayout from "@vuepress/theme-default/lib/client/layouts/Layout.vue";
+import ParentLayout from "@vuepress/theme-default/layouts/Layout.vue";
 
-const isDarkmode = ref(false);
+const isDarkMode = ref(false);
 
 let observer;
 
 onMounted(() => {
   const html = document.querySelector("html") as HTMLElement;
 
-  isDarkmode.value = html.classList.contains("dark");
+  isDarkMode.value = html.classList.contains("dark");
 
   // watch theme change
   observer = new MutationObserver(() => {
-    isDarkmode.value = html.classList.contains("dark");
+    isDarkMode.value = html.classList.contains("dark");
   });
 
   observer.observe(html, {
