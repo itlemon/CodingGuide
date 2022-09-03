@@ -1,5 +1,5 @@
-import {defineUserConfig} from "@vuepress/cli";
-import {defaultTheme} from "@vuepress/theme-default";
+import {defineUserConfig} from '@vuepress/cli';
+import {defaultTheme} from '@vuepress/theme-default';
 import {docsearchPlugin} from '@vuepress/plugin-docsearch'
 import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
 import {pwaPlugin} from '@vuepress/plugin-pwa'
