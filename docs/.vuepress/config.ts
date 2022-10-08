@@ -91,7 +91,7 @@ export default defineUserConfig({
         // 全文搜索
         docsearchPlugin({
             appId: 'WSOVOADVOS',
-            apiKey: '1e4d680ae481a50a3afec2211f80bc16',
+            apiKey: 'eb4fb6217e6a6fe1cf5f9c67578a8c07',
             indexName: 'codingguide_query_suggestions',
             searchParameters: {
                 facetFilters: ['tags:v2'],
