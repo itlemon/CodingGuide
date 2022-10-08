@@ -24,7 +24,7 @@ else
         echo 'cannot find listened port: '$port
 fi
 
-git pull
-yarn install
-yarn build
-nohup yarn serve &
+git fetch --all && git reset --hard origin/master && git pull
+npm install
+npm run docs:build
+nohup npm run docs:serve &

@@ -7,9 +7,9 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs"
+    "docs:build": "vuepress build docs --clean-cache",
+    "docs:dev": "vuepress dev docs --clean-cache",
+    "docs:serve": "anywhere -s -h localhost -p 4000 -d docs/.vuepress/dist"
   },
   "repository": {
     "type": "git",
