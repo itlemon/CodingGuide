@@ -1,12 +1,12 @@
 <template>
   <ParentLayout>
     <template #page-bottom>
-      <CommentService :darkmode="isDarkMode"/>
+      <CommentService :darkmode="isDarkMode" />
     </template>
   </ParentLayout>
 </template>
 <script setup lang="ts">
-import {onBeforeUnmount, onMounted, ref} from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import ParentLayout from "@vuepress/theme-default/layouts/Layout.vue";
 
 const isDarkMode = ref(false);

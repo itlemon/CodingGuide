@@ -1,76 +1,25 @@
 import {defineUserConfig} from '@vuepress/cli';
-import {defaultTheme} from '@vuepress/theme-default';
-import {docsearchPlugin} from '@vuepress/plugin-docsearch'
+import {defaultTheme} from '@vuepress/theme-default'
 import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
+import {docsearchPlugin} from '@vuepress/plugin-docsearch'
 import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
-import {nprogressPlugin} from '@vuepress/plugin-nprogress'
 import {gitPlugin} from '@vuepress/plugin-git'
 import {copyCodePlugin} from "vuepress-plugin-copy-code2"
 import {commentPlugin} from "vuepress-plugin-comment2"
-import {navbar, sidebar} from './configs'
+import {head, navbarZh, sidebarZh,} from './configs/index.js'
 
 export default defineUserConfig({
-    // 站点配置
-    locales: {
-        '/': {
-            lang: 'zh-CN',
-            title: '程序员乐源',
-            description: 'Programmer\'s source of happiness',
-        }
-    },
-
+    // 基础站点配置
     base: '/',
+    lang: 'zh-CN',
+    title: '程序员乐源',
+    description: 'Programmer\'s source of happiness',
 
-    head: [
-        [
-            'link',
-            {
-                rel: 'icon',
-                type: 'image/png',
-                sizes: '16x16',
-                href: `/images/icons/favicon-16x16.png`,
-            },
-        ],
-        [
-            'link',
-            {
-                rel: 'icon',
-                type: 'image/png',
-                sizes: '32x32',
-                href: `/images/icons/favicon-32x32.png`,
-            },
-        ],
-        ["link", {rel: "stylesheet", href: "//at.alicdn.com/t/font_2154804_w16nlfaojue.css"}],
-        ['link', {rel: 'manifest', href: '/manifest.webmanifest'}],
-        ['meta', {name: 'application-name', content: '程序员乐源'}],
-        ['meta', {name: 'apple-mobile-web-app-title', content: '程序员乐源'}],
-        [
-            'meta',
-            {name: 'apple-mobile-web-app-status-bar-style', content: 'black'},
-        ],
-        [
-            'link',
-            {rel: 'apple-touch-icon', href: `/images/icons/apple-touch-icon.png`},
-        ],
-        [
-            'link',
-            {
-                rel: 'mask-icon',
-                href: '/images/icons/safari-pinned-tab.svg',
-                color: '#3eaf7c',
-            },
-        ],
-        ['meta', {name: 'msapplication-TileColor', content: '#3eaf7c'}],
-        ['meta', {name: 'theme-color', content: '#3eaf7c'}],
-        // SEO
-        ['meta', {name: 'baidu-site-verification', content: 'code-au7BVxnj3F'}],
-        ['meta', {name: 'bytedance-verification-code', content: 'xAfRSRE/n7WdGPciSAEj'}],
-        ['script', {type: 'text/javascript', src: '/js/toutiao.js'}],
-        ['script', {type: 'text/javascript', src: '/js/baidu.js'}]
-    ],
+    // 网页头配置
+    head,
 
-    // 主题和它的配置
+    // 主题配置
     theme: defaultTheme({
         logo: 'https://vuejs.org/images/logo.png',
         repo: 'itlemon/CodingGuide',
@@ -80,22 +29,33 @@ export default defineUserConfig({
         locales: {
             '/': {
                 // navbar
-                navbar: navbar.zh,
+                // navbar
+                navbar: navbarZh,
                 selectLanguageName: '简体中文',
                 selectLanguageText: '选择语言',
                 selectLanguageAriaLabel: '选择语言',
 
                 // sidebar
-                sidebar: sidebar.zh,
+                sidebar: sidebarZh,
 
                 // page meta
-                editLinkText: '在 GitHub 上编辑当前页',
+                editLinkText: '在 GitHub 上编辑此页',
                 lastUpdatedText: '上次更新',
+                contributorsText: '贡献者',
 
                 // custom containers
                 tip: '提示',
                 warning: '注意',
                 danger: '警告',
+
+                // 404 page
+                notFound: [
+                    '这里什么都没有',
+                    '我们怎么到这来了？',
+                    '这是一个 404 页面',
+                    '看起来我们进入了错误的链接',
+                ],
+                backToHome: '返回首页',
 
                 // a11y
                 openInNewWindow: '在新窗口打开',
@@ -103,6 +63,7 @@ export default defineUserConfig({
                 toggleSidebar: '切换侧边栏',
             }
         },
+
         themePlugins: {
             // only enable git plugin in production mode
             git: true,
@@ -121,11 +82,16 @@ export default defineUserConfig({
 
     // 插件配置
     plugins: [
-        // 全局搜索
+        // 谷歌分析
+        googleAnalyticsPlugin({
+            id: 'G-EFC6ZD4CWJ'
+        }),
+
+        // 全文搜索
         docsearchPlugin({
-            appId: 'ZSZ2WGDLBS',
-            apiKey: '93cd1d1c5d736731a6358516d55e8e34',
-            indexName: 'CodingGuide',
+            appId: 'WSOVOADVOS',
+            apiKey: 'bc655b574280a940266b12359a268c40',
+            indexName: 'codingguide',
             searchParameters: {
                 facetFilters: ['tags:v2'],
             },
@@ -170,42 +136,39 @@ export default defineUserConfig({
                             },
                         },
                     },
-                }
+                },
             },
         }),
-        // 谷歌分析
-        googleAnalyticsPlugin({
-            id: 'G-7G4Q35XYNX'
-        }),
-        pwaPlugin({
-            skipWaiting: false
-        }),
+
+        pwaPlugin({}),
         pwaPopupPlugin({
             locales: {
                 '/': {
-                    message: '温馨提示：文档已更新',
+                    message: '文档已更新，请刷新',
                     buttonText: '刷新',
                 },
-            }
+            },
         }),
-        // 进度条插件
-        nprogressPlugin(),
+
         // git插件，这里主要是为了禁止收集部分信息
         gitPlugin({
             contributors: false
         }),
+
         // 代码拷贝插件
         copyCodePlugin({
             selector: '.theme-default-content div[class*=language-] pre',
             showInMobile: true
         }),
+
         // 评论插件
         commentPlugin({
-            provider: "Giscus",
+            provider: 'Giscus',
             repo: 'itlemon/CodingGuide',
             repoId: 'R_kgDOHL9MTw',
             category: 'Announcements',
             categoryId: 'DIC_kwDOHL9MT84CPCek'
-        })
-    ]
+        }),
+    ],
+
 })

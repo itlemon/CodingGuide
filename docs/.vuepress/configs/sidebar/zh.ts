@@ -1,6 +1,6 @@
 import type {SidebarConfig} from '@vuepress/theme-default'
 
-export const zh: SidebarConfig = {
+export const sidebarZh: SidebarConfig = {
     '/resources/guide/': [
         {
             text: '阅读指南',
@@ -40,7 +40,6 @@ export const zh: SidebarConfig = {
             children: [
                 {
                     text: '第一章 数组',
-                    collapsible: true,
                     children: [
                         '1-1数组的理论基础.md',
                         '1-2数组基础算法题.md',
@@ -52,7 +51,6 @@ export const zh: SidebarConfig = {
                 },
                 {
                     text: '第二章 链表',
-                    collapsible: true,
                     children: [
                         '2-1链表的理论基础.md',
                         '2-2常见的链表算法题.md'
@@ -60,7 +58,6 @@ export const zh: SidebarConfig = {
                 },
                 {
                     text: '第三章 哈希表',
-                    collapsible: true,
                     children: [
                         '3-1哈希表的理论基础.md',
                         '3-2常见的哈希表算法题.md'
@@ -68,7 +65,6 @@ export const zh: SidebarConfig = {
                 },
                 {
                     text: '第四章 字符串',
-                    collapsible: true,
                     children: [
                         '4-1字符串的理论基础.md',
                         '4-2常见的字符串算法题.md'
@@ -76,7 +72,6 @@ export const zh: SidebarConfig = {
                 },
                 {
                     text: '第五章 栈与队列',
-                    collapsible: true,
                     children: [
                         '5-1栈与队列的理论基础.md',
                         '5-2一文搞定单调栈算法题.md',
@@ -85,7 +80,6 @@ export const zh: SidebarConfig = {
                 },
                 {
                     text: '第六章 二叉树',
-                    collapsible: true,
                     children: [
                         '6-1二叉树的理论基础.md',
                         '6-2一文搞定还原二叉树问题.md'
@@ -93,7 +87,6 @@ export const zh: SidebarConfig = {
                 },
                 {
                     text: '第七章 回溯算法',
-                    collapsible: true,
                     children: [
                         '7-1回溯算法的理论基础.md',
                         '7-2一文搞定岛屿类问题.md'
@@ -101,7 +94,6 @@ export const zh: SidebarConfig = {
                 },
                 {
                     text: '第八章 贪心算法',
-                    collapsible: true,
                     children: [
                         '8-1贪心算法的理论基础.md',
                         '8-2常见的贪心算法题.md'
@@ -109,7 +101,6 @@ export const zh: SidebarConfig = {
                 },
                 {
                     text: '第九章 动态规划',
-                    collapsible: true,
                     children: [
                         '9-1动态规划的理论基础.md',
                         '9-2常见的动态规划算法题.md'
