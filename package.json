@@ -28,7 +28,8 @@
     "@vuepress/plugin-pwa-popup": "^2.0.0-beta.51",
     "vuepress": "^2.0.0-beta.51",
     "vuepress-plugin-comment2": "^2.0.0-beta.108",
-    "vuepress-plugin-copy-code2": "^2.0.0-beta.108"
+    "vuepress-plugin-copy-code2": "^2.0.0-beta.108",
+    "vuepress-plugin-sitemap2": "^2.0.0-beta.108"
   },
   "dependencies": {
     "@vuepress/plugin-docsearch": "^2.0.0-beta.51",
@@ -38,6 +39,7 @@
     "@vuepress/theme-default": "^2.0.0-beta.51",
     "vuepress": "^2.0.0-beta.51",
     "vuepress-plugin-comment2": "^2.0.0-beta.108",
-    "vuepress-plugin-copy-code2": "^2.0.0-beta.108"
+    "vuepress-plugin-copy-code2": "^2.0.0-beta.108",
+    "vuepress-plugin-sitemap2": "^2.0.0-beta.108"
   }
 }

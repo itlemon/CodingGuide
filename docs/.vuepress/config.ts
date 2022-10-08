@@ -7,6 +7,7 @@ import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {gitPlugin} from '@vuepress/plugin-git'
 import {copyCodePlugin} from "vuepress-plugin-copy-code2"
 import {commentPlugin} from "vuepress-plugin-comment2"
+import {sitemapPlugin} from "vuepress-plugin-sitemap2"
 import {head, navbarZh, sidebarZh,} from './configs/index.js'
 
 export default defineUserConfig({
@@ -168,6 +169,11 @@ export default defineUserConfig({
             repoId: 'R_kgDOHL9MTw',
             category: 'Announcements',
             categoryId: 'DIC_kwDOHL9MT84CPCek'
+        }),
+
+        // seo增强
+        sitemapPlugin({
+            hostname: 'https://codingguide.cn'
         }),
     ],
 
