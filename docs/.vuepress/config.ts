@@ -92,7 +92,7 @@ export default defineUserConfig({
         docsearchPlugin({
             appId: 'WSOVOADVOS',
             apiKey: '1e4d680ae481a50a3afec2211f80bc16',
-            indexName: 'codingguide',
+            indexName: 'codingguide_query_suggestions',
             searchParameters: {
                 facetFilters: ['tags:v2'],
             },
