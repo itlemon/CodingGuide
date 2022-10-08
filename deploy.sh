@@ -25,6 +25,6 @@ else
 fi
 
 git fetch --all && git reset --hard origin/master && git pull
-npm install
-npm run docs:build
-nohup npm run docs:serve &
+sudo npm install
+sudo npm run docs:build
+sudo nohup npm run docs:serve &
