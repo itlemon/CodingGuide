@@ -8,7 +8,7 @@ import {gitPlugin} from '@vuepress/plugin-git'
 import {copyCodePlugin} from "vuepress-plugin-copy-code2"
 import {commentPlugin} from "vuepress-plugin-comment2"
 import {sitemapPlugin} from "vuepress-plugin-sitemap2"
-import {head, navbarZh, sidebarZh,} from './configs/index.js'
+import {head, navbarZh, sidebarZh,} from './configs'
 
 export default defineUserConfig({
     // 基础站点配置
@@ -92,7 +92,7 @@ export default defineUserConfig({
         docsearchPlugin({
             appId: 'WSOVOADVOS',
             apiKey: 'bc655b574280a940266b12359a268c40',
-            indexName: 'codingguide',
+            indexName: 'codingguide_query_suggestions',
             searchParameters: {
                 facetFilters: ['tags:v2'],
             },
