@@ -8,6 +8,8 @@ import {gitPlugin} from '@vuepress/plugin-git'
 import {copyCodePlugin} from "vuepress-plugin-copy-code2"
 import {commentPlugin} from "vuepress-plugin-comment2"
 import {sitemapPlugin} from "vuepress-plugin-sitemap2"
+import {svgIconPlugin} from '@goy/vuepress-plugin-svg-icons'
+import {removeHtmlExtensionPlugin} from 'vuepress-plugin-remove-html-extension'
 import {head, navbarZh, sidebarZh,} from './configs'
 
 export default defineUserConfig({
@@ -175,6 +177,14 @@ export default defineUserConfig({
         sitemapPlugin({
             hostname: 'https://codingguide.cn'
         }),
+
+        // svg插件
+        svgIconPlugin({
+            svgsDir: '.vuepress/public/icons'
+        }),
+
+        // 去掉文档后面的html
+        removeHtmlExtensionPlugin(),
     ],
 
 })
