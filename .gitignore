@@ -34,3 +34,6 @@ nohup.out
 
 .temp
 .cache
+
+# macOS
+.DS_Store
