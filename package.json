@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/itlemon/CodingGuide#readme",
   "devDependencies": {
+    "@goy/vuepress-plugin-svg-icons": "^5.1.0",
     "@vuepress/plugin-docsearch": "^2.0.0-beta.51",
     "@vuepress/plugin-google-analytics": "^2.0.0-beta.51",
     "@vuepress/plugin-pwa": "^2.0.0-beta.51",
@@ -32,6 +33,7 @@
     "vuepress-plugin-sitemap2": "^2.0.0-beta.108"
   },
   "dependencies": {
+    "@goy/vuepress-plugin-svg-icons": "^5.1.0",
     "@vuepress/plugin-docsearch": "^2.0.0-beta.51",
     "@vuepress/plugin-google-analytics": "^2.0.0-beta.51",
     "@vuepress/plugin-pwa": "^2.0.0-beta.51",
