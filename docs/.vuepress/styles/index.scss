@@ -4,3 +4,12 @@
   // 页面宽度
   --content-width: 960px !important;
 }
+
+// 禁用左上角logo后面的文字
+.navbar .site-name {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--c-text);
+  position: relative;
+  display: none;
+}

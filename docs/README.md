@@ -1,6 +1,9 @@
 ---
 home: true
 heroImage: /images/hero.png
+heroImageDark: /images/hero_dark.png
+heroText: 程序员乐源
+tagline: Programmer's source of happiness
 actions:
   - text: 阅读指南
     link: /resources/guide/getting-started.md

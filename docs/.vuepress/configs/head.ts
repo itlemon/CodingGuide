@@ -7,7 +7,7 @@ export const head: HeadConfig[] = [
             rel: 'icon',
             type: 'image/png',
             sizes: '16x16',
-            href: `/images/icons/favicon-16x16.png`,
+            href: `/images/icons/favicon.png`,
         },
     ],
     [
@@ -16,7 +16,7 @@ export const head: HeadConfig[] = [
             rel: 'icon',
             type: 'image/png',
             sizes: '32x32',
-            href: `/images/icons/favicon-32x32.png`,
+            href: `/images/icons/favicon.png`,
         },
     ],
     ["link", {rel: "stylesheet", href: "//at.alicdn.com/t/font_2154804_w16nlfaojue.css"}],

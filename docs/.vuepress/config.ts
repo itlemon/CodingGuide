@@ -23,14 +23,14 @@ export default defineUserConfig({
 
     // 主题配置
     theme: defaultTheme({
-        logo: 'https://vuejs.org/images/logo.png',
+        logo: '/images/logo.png',
+        logoDark: '/images/logo_dark.png',
         repo: 'itlemon/CodingGuide',
         docsBranch: 'master',
         repoLabel: 'GitHub',
         docsDir: 'docs',
         locales: {
             '/': {
-                // navbar
                 // navbar
                 navbar: navbarZh,
                 selectLanguageName: '简体中文',
