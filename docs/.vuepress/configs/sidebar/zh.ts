@@ -1,16 +1,6 @@
 import type {SidebarConfig} from '@vuepress/theme-default'
 
 export const sidebarZh: SidebarConfig = {
-    '/resources/guide/': [
-        {
-            text: '阅读指南',
-            collapsible: true,
-            children: [
-                'README.md',
-                'getting-started.md'
-            ],
-        }
-    ],
     '/resources/bigdata/': [
         {
             text: 'sql面试题',
