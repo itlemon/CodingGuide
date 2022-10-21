@@ -24,7 +24,13 @@ else
         echo 'cannot find listened port: '$port
 fi
 
-git checkout dev
+if git rev-parse --verify dev
+then
+     git checkout dev
+else
+     git checkout -b dev
+fi
+
 git fetch --all && git reset --hard origin/dev && git pull
 sudo npm install
 sudo npm run docs:build
