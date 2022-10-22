@@ -8,9 +8,9 @@
         <img class="pic-404__child right" src="/images/404/404_cloud.png" alt="404">
       </div>
       <div class="bullshit">
-        <div class="bullshit__oops">OOPS!</div>
+        <div class="bullshit__oops">404 Not Found!</div>
         <div class="bullshit__info">All rights reserved
-          <a style="color:#20a0ff" href="https://codingguide.cn" target="_blank">CodingGuide</a>
+          <a style="color:#20a0ff" href="https://codingguide.cn">CodingGuide</a>.
         </div>
         <div class="bullshit__headline">The CodingGuide said that you can not enter this page...</div>
         <div class="bullshit__info">Please check that the URL you entered is correct, or click the button below to
