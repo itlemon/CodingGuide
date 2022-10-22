@@ -6,10 +6,10 @@ heroText: 程序员乐源
 tagline: Programmer's source of happiness
 actions:
   - text: 阅读指南
-    link: https://baidu.com
+    link: /resources/guide/getting-started.md
     type: primary
   - text: 项目简介
-    link: https://baidu.com
+    link: /resources/guide/
     type: secondary
 features:
   - title: 专注创作
