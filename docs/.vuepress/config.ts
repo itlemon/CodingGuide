@@ -1,5 +1,9 @@
 import {defineUserConfig} from 'vuepress'
 import {defaultTheme} from 'vuepress'
+import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
+import {pwaPlugin} from '@vuepress/plugin-pwa'
+import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
+import {gitPlugin} from '@vuepress/plugin-git'
 import {head, navbarZh, sidebarZh,} from './configs'
 
 export default defineUserConfig({
@@ -55,4 +59,38 @@ export default defineUserConfig({
             prismjs: true,
         },
     }),
+
+    // 开发相关的配置，设置为4000
+    port: 4000,
+
+    // md配置
+    markdown: {
+        code: {
+            lineNumbers: true,
+            highlightLines: true
+        }
+    },
+
+    // 插件配置
+    plugins: [
+        // 谷歌分析
+        googleAnalyticsPlugin({
+            id: 'G-EFC6ZD4CWJ'
+        }),
+
+        pwaPlugin({}),
+        pwaPopupPlugin({
+            locales: {
+                '/': {
+                    message: '文档已更新，请刷新',
+                    buttonText: '刷新',
+                },
+            },
+        }),
+
+        // git插件，这里主要是为了禁止收集部分信息
+        gitPlugin({
+            contributors: false
+        }),
+    ],
 })
