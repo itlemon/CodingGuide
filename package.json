@@ -4,8 +4,8 @@
   "description": "Docs Powered by codingguide.cn",
   "main": "index.js",
   "scripts": {
-    "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs",
+    "docs:dev": "vuepress dev docs --clean-cache",
+    "docs:build": "vuepress build docs --clean-cache",
     "docs:serve": "anywhere -s -h localhost -p 4000 -d docs/.vuepress/dist"
   },
   "repository": {
