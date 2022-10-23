@@ -33,5 +33,4 @@ fi
 
 git fetch --all && git reset --hard origin/master && git pull
 sudo npm install
-sudo npm run docs:build
-sudo nohup npm run docs:serve &
+sudo nohup npm run docs:dev &
