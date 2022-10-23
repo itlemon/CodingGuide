@@ -4,6 +4,9 @@ import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
 import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {gitPlugin} from '@vuepress/plugin-git'
+import {copyCodePlugin} from 'vuepress-plugin-copy-code2'
+import {commentPlugin} from 'vuepress-plugin-comment2'
+import {sitemapPlugin} from 'vuepress-plugin-sitemap2'
 import {head, navbarZh, sidebarZh,} from './configs'
 
 export default defineUserConfig({
@@ -91,6 +94,27 @@ export default defineUserConfig({
         // git插件，这里主要是为了禁止收集部分信息
         gitPlugin({
             contributors: false
+        }),
+
+        // 代码拷贝插件
+        copyCodePlugin({
+            selector: '.theme-default-content div[class*=language-] pre',
+            showInMobile: true
+        }),
+
+        // 评论插件
+        commentPlugin({
+            provider: 'Giscus',
+            repo: 'itlemon/CodingGuide',
+            repoId: 'R_kgDOHL9MTw',
+            category: 'Announcements',
+            categoryId: 'DIC_kwDOHL9MT84CPCek'
+        }),
+
+        // seo增强
+        sitemapPlugin({
+            hostname: 'https://codingguide.cn',
+            author: 'itlemon'
         }),
     ],
 })
