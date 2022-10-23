@@ -3,6 +3,7 @@
 
 port=4000
 
+# 通过ss的方式获取pid
 function get_pid_by_listen_port() {
         pattern_str="*:$port\\b"
         pid=$(ss -n -t -l -p | grep "$pattern_str" | column -t | awk -F ',' '{print $(NF-1)}')
@@ -15,7 +16,13 @@ function get_pid_by_listen_port() {
         echo $pid
 }
 
-pid=$(get_pid_by_listen_port $port)
+# 通过netstat的方式获取pid
+function get_pid_by_listen_port2() {
+    pid=$(netstat -nlp | grep $port | awk '{print $7}' | grep -o -E '[0-9]+')
+    echo $pid
+}
+
+pid=$(get_pid_by_listen_port2 $port)
 if [ -n "$pid" ]
 then
         echo "find pid: $pid, kill it..."
