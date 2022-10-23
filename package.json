@@ -20,5 +20,8 @@
   "homepage": "https://github.com/itlemon/CodingGuide#readme",
   "devDependencies": {
     "vuepress": "^2.0.0-beta.52"
+  },
+  "dependencies": {
+    "vuepress": "^2.0.0-beta.52"
   }
 }
