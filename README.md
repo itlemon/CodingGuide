@@ -29,7 +29,7 @@ npm install
 npm run docs:dev
 ```
 
-访问： [http://localhost:8080](http://localhost:8080) 可以看到本地部署的博客，支持动态修改更新。
+访问： [http://localhost:4000](http://localhost:4000) 可以看到本地部署的博客，支持动态修改更新。
 
 第四步：服务器部署
 
@@ -46,8 +46,7 @@ Linux 或者 macOS 还可以使用命令：
 ```shell
 git pull
 sudo npm install
-sudo npm run docs:build
-sudo nohup npm run docs:serve &
+sudo nohup npm run docs:dev &
 ```
 
 - Windows
@@ -57,8 +56,7 @@ Windows用户请使用命令：
 ```shell
 git pull
 sudo npm install
-sudo npm run docs:build
-start npm run docs:serve &
+start npm run docs:dev &
 ```
 
 服务器部署方式默认端口是`4000`，需要注意的是，使用脚本部署或者`nohup`及`start`来部署，都是后台启动，重新启动的时候需要kill原有的进程，才能生效。
