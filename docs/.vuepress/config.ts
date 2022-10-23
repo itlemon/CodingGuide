@@ -4,9 +4,11 @@ import {googleAnalyticsPlugin} from '@vuepress/plugin-google-analytics'
 import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {gitPlugin} from '@vuepress/plugin-git'
+import {searchPlugin} from '@vuepress/plugin-search'
 import {copyCodePlugin} from 'vuepress-plugin-copy-code2'
 import {commentPlugin} from 'vuepress-plugin-comment2'
 import {sitemapPlugin} from 'vuepress-plugin-sitemap2'
+import {svgIconPlugin} from '@goy/vuepress-plugin-svg-icons'
 import {head, navbarZh, sidebarZh,} from './configs'
 
 export default defineUserConfig({
@@ -96,6 +98,17 @@ export default defineUserConfig({
             contributors: false
         }),
 
+        // docsearch
+        searchPlugin({
+            locales: {
+                '/': {
+                    placeholder: '搜索',
+                }
+            },
+            // 排除首页
+            isSearchable: (page) => page.path !== '/',
+        }),
+
         // 代码拷贝插件
         copyCodePlugin({
             selector: '.theme-default-content div[class*=language-] pre',
@@ -115,6 +128,11 @@ export default defineUserConfig({
         sitemapPlugin({
             hostname: 'https://codingguide.cn',
             author: 'itlemon'
+        }),
+
+        // svg插件
+        svgIconPlugin({
+            svgsDir: '.vuepress/public/icons'
         }),
     ],
 })
