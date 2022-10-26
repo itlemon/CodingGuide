@@ -9,6 +9,7 @@ import {copyCodePlugin} from 'vuepress-plugin-copy-code2'
 import {commentPlugin} from 'vuepress-plugin-comment2'
 import {sitemapPlugin} from 'vuepress-plugin-sitemap2'
 import {svgIconPlugin} from '@goy/vuepress-plugin-svg-icons'
+import {mdEnhancePlugin} from 'vuepress-plugin-md-enhance'
 import {head, navbarZh, sidebarZh,} from './configs'
 
 export default defineUserConfig({
@@ -126,13 +127,18 @@ export default defineUserConfig({
 
         // seo增强
         sitemapPlugin({
-            hostname: 'https://codingguide.cn',
-            author: 'itlemon'
+            hostname: 'https://codingguide.cn'
         }),
 
         // svg插件
         svgIconPlugin({
             svgsDir: '.vuepress/public/icons'
+        }),
+
+        // md增强插件
+        mdEnhancePlugin({
+            // 使用 KaTeX 启用 TeX 支持
+            katex: true,
         }),
     ],
 })
