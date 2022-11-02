@@ -22,7 +22,7 @@ function get_pid_by_listen_port2() {
     echo $pid
 }
 
-pid=$(get_pid_by_listen_port2 $port)
+pid=$(get_pid_by_listen_port $port)
 if [ -n "$pid" ]
 then
         echo "find pid: $pid, kill it..."
@@ -40,4 +40,5 @@ fi
 
 git fetch --all && git reset --hard origin/dev && git pull
 sudo npm install
-sudo nohup npm run docs:dev &
+sudo npm run docs:build
+sudo nohup npm run docs:serve &
