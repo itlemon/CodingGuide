@@ -1,0 +1,25 @@
+{
+  "name": "codingguide",
+  "version": "1.0.0",
+  "description": "Docs Powered by codingguide.cn",
+  "main": "index.js",
+  "repository": "git@github.com:itlemon/CodingGuide.git",
+  "author": "itlemon <lemon_jiang@aliyun.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@goy/vuepress-plugin-svg-icons": "^5.3.1",
+    "@vuepress/plugin-google-analytics": "^2.0.0-beta.60",
+    "@vuepress/plugin-pwa": "^2.0.0-beta.60",
+    "@vuepress/plugin-pwa-popup": "^2.0.0-beta.60",
+    "@vuepress/plugin-search": "^2.0.0-beta.60",
+    "vuepress": "^2.0.0-beta.60",
+    "vuepress-plugin-comment2": "^2.0.0-beta.173",
+    "vuepress-plugin-copy-code2": "^2.0.0-beta.173",
+    "vuepress-plugin-md-enhance": "^2.0.0-beta.173",
+    "vuepress-plugin-seo2": "^2.0.0-beta.173"
+  },
+  "scripts": {
+    "docs:dev": "vuepress dev docs --clean-cache",
+    "docs:build": "vuepress build docs --clean-cache"
+  }
+}

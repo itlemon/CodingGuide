@@ -23,7 +23,6 @@
 hs_err_pid*
 
 # vuepress
-/yarn.lock
 /.git
 /.idea/
 /package-lock.json
