@@ -39,6 +39,6 @@ else
 fi
 
 git fetch --all && git reset --hard origin/dev && git pull
-sudo npm install
-sudo npm run docs:build
-sudo nohup npm run docs:serve &
+sudo yarn install
+sudo yarn docs:build
+sudo nohup yarn docs:serve &
