@@ -1,28 +1,6 @@
 import type {SidebarConfig} from '@vuepress/theme-default'
 
 export const sidebarZh: SidebarConfig = {
-    '/resources/bigdata/': [
-        {
-            text: 'sql面试题',
-            link:'/resources/bigdata/hsql',
-            children: [
-                '1-行列转换.md',
-                '2-排名取它值.md',
-                '3-累计求值.md',
-                '4-窗口大小的控制.md',
-                '5-不使用distinct和group by分组.md',
-                'README.md'
-            ],
-        },
-        {
-            text: 'hive sql函数总结',
-            link:'/resources/bigdata/hsql',
-            children: [
-
-                'README.md'
-            ],
-        }
-    ],
     '/resources/data-structure-and-algorithm/': [
         {
             text: '阅读指南',
@@ -147,11 +125,15 @@ export const sidebarZh: SidebarConfig = {
     ],
     '/resources/middleware/': [
         {
-            text: 'RocketMQ',
+            text: '阅读指南',
             link: '/resources/middleware/rocketmq/',
-            collapsible: true,
             children: [
-                '01RocketMQ源码阅读环境搭建.md',
+                {
+                    text: '第一章 搭建源码环境',
+                    children: [
+                        '1-1RocketMQ源码阅读环境搭建.md'
+                    ]
+                },
                 '02NameServer启动源码分析.md',
                 '03Producer启动原理分析.md',
                 '04Producer消息发送原理分析.md',
@@ -194,6 +176,28 @@ export const sidebarZh: SidebarConfig = {
         {
             text: '其他',
             link: '/resources/middleware/other/'
+        }
+    ],
+    '/resources/bigdata/': [
+        {
+            text: 'sql面试题',
+            link:'/resources/bigdata/hsql',
+            children: [
+                '1-行列转换.md',
+                '2-排名取它值.md',
+                '3-累计求值.md',
+                '4-窗口大小的控制.md',
+                '5-不使用distinct和group by分组.md',
+                'README.md'
+            ],
+        },
+        {
+            text: 'hive sql函数总结',
+            link:'/resources/bigdata/hsql',
+            children: [
+
+                'README.md'
+            ],
         }
     ],
 }
