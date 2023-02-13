@@ -12,30 +12,30 @@
 
 RocketMQ 的所有模块都在上图进行了展示，笔者隐藏了部分文本文件，可能与你 $git$ $clone$ 下来的代码结构有细微区别。接下来，用下表对上述模块进行功能解释。
 
-|    模块名称    | 功能介绍                                                     |
-| :------------: | :----------------------------------------------------------- |
-|      acl       | 访问控制列表（Access Control Lists，ACL）， RocketMQ 权限管理模块 |
-|   **bazel**    | **bazel 是 Google 开源的构建工具，目前广泛用于云计算领域的开源软件（如 Kubernetes）构建， RocketMQ 5.0 引入了 bazel 构建** |
-|     broker     | RocketMQ 5.0 中，计算与存储实现了分离，Broker主要专注于消息存储 |
-|     client     | MQ 客户端，包括 Producer 和 Consumer                         |
-|     common     | 用于存储 RocketMQ 项目的通用代码和 Model 等                  |
+|      模块名称      | 功能介绍                                                                                                                                                                                                                                                                  |
+|:--------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|      acl       | 访问控制列表（Access Control Lists，ACL）， RocketMQ 权限管理模块                                                                                                                                                                                                                     |
+|   **bazel**    | **bazel 是 Google 开源的构建工具，目前广泛用于云计算领域的开源软件（如 Kubernetes）构建， RocketMQ 5.0 引入了 bazel 构建**                                                                                                                                                                                |
+|     broker     | RocketMQ 5.0 中，计算与存储实现了分离，Broker主要专注于消息存储                                                                                                                                                                                                                             |
+|     client     | MQ 客户端，包括 Producer 和 Consumer                                                                                                                                                                                                                                         |
+|     common     | 用于存储 RocketMQ 项目的通用代码和 Model 等                                                                                                                                                                                                                                        |
 | **container**  | **RocketMQ 5.0 新引入 BrokerContainer 概念，一个 BrokerContainer 中可以部署多个 Broker，这些 Broker 拥有独立的端口，功能完全独立，并且可以共享同一个节点的资源，引入该模块主要是为了解决 RocketMQ 4.5 之前 Broker 节点挂掉后不能自动切换的问题及 RocketMQ 4.5 之后基于 Raft 协议的 DLedger 实现主从切换的资源冗余使用的问题，且支持 Mater-Slave Broker 交叉部署，提高了 Broker 的可用性** |
-| **controller** | **RocketMQ 5.0 引入了 DLedger Controller 架构，解决传统 DLedger 架构的不足** |
-|      dev       | merge_rocketmq_pr.py 脚本，用于处理 RP                       |
-|  distribution  | Client、 Namesrv、 Broker 等启动脚本及打包脚本               |
-|      docs      | 文档                                                         |
-|    example     | RocketMQ 示例代码，源码分析可以从这里入手                    |
-|     filter     | 过滤器模块，包含 SQL 过滤                                    |
-|    logging     | 日志实现模块                                                 |
-|    namesrv     | Namesrv 实现模块                                             |
-| openmessaging  | openmessaging 模块                                           |
-|   **proxy**    | **RocketMQ 5.0 为了更好地拥抱云原生，实现了计算和存储相分离，把计算相关的功能抽象到了 Proxy，协议适配、权限管理、消息管理等，Broker 则专注于存储** |
-|    remoting    | 基于 Netty 实现的网络通信模块， RocketMQ 各组件之间的通信都依赖它 |
-|    srvutil     | 工具包模块                                                   |
-|     store      | 数据存储模块，例如 Broker 数据                               |
-|     style      | 代码风格 XML 文件                                            |
-|      test      | RocketMQ 案例测试模块                                        |
-|     tools      | RocketMQ 对外命令行接口、管理类接口等                        |
+| **controller** | **RocketMQ 5.0 引入了 DLedger Controller 架构，解决传统 DLedger 架构的不足**                                                                                                                                                                                                         |
+|      dev       | merge_rocketmq_pr.py 脚本，用于处理 RP                                                                                                                                                                                                                                       |
+|  distribution  | Client、 Namesrv、 Broker 等启动脚本及打包脚本                                                                                                                                                                                                                                    |
+|      docs      | 文档                                                                                                                                                                                                                                                                    |
+|    example     | RocketMQ 示例代码，源码分析可以从这里入手                                                                                                                                                                                                                                             |
+|     filter     | 过滤器模块，包含 SQL 过滤                                                                                                                                                                                                                                                       |
+|    logging     | 日志实现模块                                                                                                                                                                                                                                                                |
+|    namesrv     | Namesrv 实现模块                                                                                                                                                                                                                                                          |
+| openmessaging  | openmessaging 模块                                                                                                                                                                                                                                                      |
+|   **proxy**    | **RocketMQ 5.0 为了更好地拥抱云原生，实现了计算和存储相分离，把计算相关的功能抽象到了 Proxy，协议适配、权限管理、消息管理等，Broker 则专注于存储**                                                                                                                                                                              |
+|    remoting    | 基于 Netty 实现的网络通信模块， RocketMQ 各组件之间的通信都依赖它                                                                                                                                                                                                                             |
+|    srvutil     | 工具包模块                                                                                                                                                                                                                                                                 |
+|     store      | 数据存储模块，例如 Broker 数据                                                                                                                                                                                                                                                   |
+|     style      | 代码风格 XML 文件                                                                                                                                                                                                                                                           |
+|      test      | RocketMQ 案例测试模块                                                                                                                                                                                                                                                       |
+|     tools      | RocketMQ 对外命令行接口、管理类接口等                                                                                                                                                                                                                                               |
 
 上述模块中，加黑的模块是 RocketMQ 5.0 新增的模块，为了更好地拥抱云原生， RocketMQ 5.0 架构上发生了比较大的变化，实现计算存储相分离，并且引入 $bazel$ 进行构建。在高可用方面，RocketMQ 5.0 对传统的基于 DLedger 的高可用进行了改造，同时引入了 BrokerContainer 对等部署方案。
 
