@@ -1,3 +1,3 @@
-# 第二节 NameServer的路由管理机制
+# 第2节 NameServer的路由管理机制
 
-更多内容，敬请期待
+![image-20230214233259510](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230214233259510.png)

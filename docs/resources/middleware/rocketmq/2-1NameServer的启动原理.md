@@ -1,4 +1,4 @@
-# 第一节 NameServer的启动原理
+# 第1节 NameServer的启动原理
 
 ![image-20230214231618529](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230214231618529.png)
 
