@@ -43,7 +43,7 @@ RocketMQ 的所有模块都在上图进行了展示，笔者隐藏了部分文�
 
 将 RocketMQ 源码导入到 IntelliJ IDEA 中，如下图所示：
 
-![image-20230212165733060](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230212165733060.png =200x)
+![image-20230212165733060](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230212165733060.png)
 
 然后进入到 RocketMQ 根目录，在控制台使用命令 `mvn -Dmaven.test.skip=true clean package` 进行编译，当然也可以使用 IntelliJ IDEA 可视化插件进行编译，如下图所示：
 
