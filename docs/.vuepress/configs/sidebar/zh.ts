@@ -134,6 +134,13 @@ export const sidebarZh: SidebarConfig = {
                         '1-1RocketMQ源码阅读环境搭建.md'
                     ]
                 },
+                {
+                    text: '第二章 深入解读NameServer',
+                    children: [
+                        '2-1NameServer的启动原理.md',
+                        '2-2NameServer的路由管理机制.md'
+                    ]
+                },
                 '02NameServer启动源码分析.md',
                 '03Producer启动原理分析.md',
                 '04Producer消息发送原理分析.md',
