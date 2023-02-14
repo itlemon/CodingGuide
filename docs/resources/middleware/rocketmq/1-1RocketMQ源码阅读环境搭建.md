@@ -43,15 +43,15 @@ RocketMQ 的所有模块都在上图进行了展示，笔者隐藏了部分文�
 
 将 RocketMQ 源码导入到 IntelliJ IDEA 中，如下图所示：
 
-![image-20230212165733060](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230212165733060.png)
+<img src="https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230212165733060.png" alt="image-20230212165733060" style="zoom: 50%;" />
 
 然后进入到 RocketMQ 根目录，在控制台使用命令 `mvn -Dmaven.test.skip=true clean package` 进行编译，当然也可以使用 IntelliJ IDEA 可视化插件进行编译，如下图所示：
 
-![image-20230212170002921](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230212170002921.png)
+<img src="https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230212170002921.png" alt="image-20230212170002921" style="zoom:50%;" />
 
 编译成功后如下图所示：
 
-![image-20230212170513837](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230212170513837.png)
+<img src="https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230212170513837.png" alt="image-20230212170513837" style="zoom: 33%;" />
 
 如果编译过程中出现插件找不到或者部分依赖找不到，可以尝试将 $maven$ 的远程仓库替换成为[阿里云maven仓库](https://developer.aliyun.com/mvn/guide)。
 
