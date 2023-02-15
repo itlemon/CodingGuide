@@ -1,4 +1,4 @@
-# 第1节 搭建RocketMQ源码环境
+# 第2节 搭建RocketMQ源码环境
 
 ![image-20230212125755344](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230212125755344.png)
 

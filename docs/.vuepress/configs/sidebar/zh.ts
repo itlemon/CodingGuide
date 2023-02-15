@@ -131,7 +131,8 @@ export const sidebarZh: SidebarConfig = {
                 {
                     text: '第一章 搭建源码环境',
                     children: [
-                        '1-1RocketMQ源码阅读环境搭建.md'
+                        '1-1RocketMQ5.0新特性.md',
+                        '1-2RocketMQ源码阅读环境搭建.md'
                     ]
                 },
                 {
