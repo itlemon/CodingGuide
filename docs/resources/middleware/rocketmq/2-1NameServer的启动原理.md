@@ -2,20 +2,96 @@
 
 ![image-20230214231618529](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230214231618529.png)
 
-> 一般了解 RocketMQ 的读者都知道，NameServer 是 RocketMQ 的组织协调者，是 RocketMQ 对外提供服务的“大脑”。NameServer 提供了路由管理，服务注册与服务发现等机制，是保证消息正确地从生产者到消费者的“指挥官”。那么，生产者生产的消息是如何正确地被消费者消费的呢？Broker 的宕机是如何被生产者和消费者感知的呢？RocketMQ 对外提供服务的可靠性是如何保障的呢？带着这几个问题，我们一起去深入了解RocketMQ NameServer 的设计原理及实现吧！
+> 一般了解 RocketMQ 的读者都知道，NameServer 是 RocketMQ 的组织协调者，是 RocketMQ 对外提供服务的“大脑”。NameServer 提供了路由管理，服务注册与服务发现等机制，是保证消息正确地从生产者到消费者的“指挥官”。那么，生产者生产的消息是如何正确地被消费者消费的呢？Broker 的宕机是如何被生产者和消费者感知的呢？RocketMQ 对外提供服务的可靠性是如何保障的呢？带着这几个问题，我们一起去深入了解RocketMQ NameServer 的设计原理及实现吧！文中的代码仓库地址：[点击跳转](https://github.com/itlemon/rocketmq-5.0.0)。
 
 ## 一、NameServer的基本原理
 
-我们熟知的几种常见的消息队列组件，比如Kafka，ActiveMQ，RabbitMQ等，都是一种基于主题的发布订阅机制，RocketMQ也正是基于这种机制实现的消息服务。消息生产者（Producer）将生产好的消息发布到某个主题，该主题下的消息在消息服务器（Broker）中进行传送或存储，由消费者（Consumer）进行订阅主题，从消息服务器中获取到消息后进行消费。消费者获取消息的方式通常有两种，一种是主动去消息服务器拉取消息（Pull Message），另外一种是由消息服务器推送消息（Push Message）给消费者。这种主题的发布订阅机制应用到分布式系统中，成功解耦了生产者和消费者。既然是分布式系统，那么常常存在分布式系统问题，比如某个消息服务器宕机了，生产者是如何感知这台消息服务器宕机了，从而避免将消息发送到这台消息服务器上，消费者是如何感知这台消息服务器宕机了，从而避免从这台消息服务器上拉取消息的呢？且这台宕机的消息服务器是如何从消息服务器实例列表中被剔除的呢？这一切都将归功于NameServer，它的诞生让动态感知、动态剔除、负载均衡成为可能。
-图1-1是RocketMQ常见的物理部署图（图片来源：百度图库），采用的部署方式2m-2s（2Master，2Slave），本小节将根据此图阐述RocketMQ基本的流程原理，后面的小节将深入源码中，从源码中来验证基本流程原理。
+我们熟知的几种常见的消息队列组件，比如 Kafka，ActiveMQ，RabbitMQ 等，都是一种基于主题的发布订阅机制，RocketMQ 也正是基于这种机制实现的消息服务。消息生产者（Producer）将生产好的消息发布到某个主题，该主题下的消息在消息服务器（Broker）中进行传送或存储，由消费者（Consumer）进行订阅主题，从消息服务器中获取到消息后进行消费。
+
+消费者获取消息的方式通常有两种，一种是主动去消息服务器拉取消息（Pull Message），另外一种是由消息服务器推送消息（Push Message）给消费者。这种主题的发布订阅机制应用到分布式系统中，成功解耦了生产者和消费者。既然是分布式系统，那么常常存在分布式系统问题，比如某个消息服务器宕机了，生产者是如何感知这台消息服务器宕机了，从而避免将消息发送到这台消息服务器上，消费者是如何感知这台消息服务器宕机了，从而避免从这台消息服务器上拉取消息的呢？且这台宕机的消息服务器是如何从消息服务器实例列表中被剔除的呢？这一切都将归功于 NameServer，它的诞生让动态感知、动态剔除、负载均衡成为可能。
+
+下图是 RocketMQ 常见的物理部署图（图片来源：百度图库），采用的部署方式2m-2s（2Master，2Slave），这个部署结构在 RocketMQ 4.x 中也是常用的，本文暂时将不会去过多介绍 RocketMQ 5.0 的新部署结构，后续将有专门的文章去阐述。本小节将根据此图阐述 RocketMQ 基本的流程原理，后面的小节将深入源码中，从源码中来验证基本流程原理。
+
 ![](https://img-blog.csdnimg.cn/20201017102633155.png)
-文章一开始就说道，NameServer是整个RocketMQ消息服务系统的“大脑”，是指挥消息正确发送、消费的“指挥官”，那么他是如何完成这样完美的指挥任务的呢？
-NameServer被设计为一种无状态的服务注册发现中心，在NameServer集群中，各个NameServer之间是无感知，无通信的独立节点，任何一个NameServer节点挂掉，都不影响整体的消息服务。Broker在启动的时候，会向指定的NameServer列表中的每个NameServer注册，发送自身的元信息到每个NameServer中，这些元信息包含但不限于BrokerName，BrokerAddress，Broker端口，集群信息，Topic等信息，这些元信息将保存在NameServer的路由信息管理器（RouteInfoManager）中。当消息生产者在将生产的消息发送出去之前，会从NameServer中拉取Broker的信息列表，然后通过负载均衡算法从中选择一个Broker服务器将消息发送出去。当消息消费者要消费消息之前，也会去NameServer中拉取Broker的信息列表，从而从Broker中获取可消费的消息。Broker在首次启动会向NameServer注册元信息，启动后也会定期向NameServer发送心跳，这个周期默认是30秒，当然这个周期可以自定义，支持范围是10秒到60秒之间，每次心跳发送的数据包都是该Broker的元数据信息。NameServer也有自动检测能力，NameServer启动后会注册一个定时任务线程池，每10秒会自动扫描Broker列表，对于不再存活的Broker，将做剔除处理。这动态维护路由信息的能力，并不包含动态通知消息生产者，也就是说生产者并不会及时感知到非存活状态Broker被剔除，但是这并不影响消息的正确发送，因为生产者自身提供有容错机制来保证消息的正常发送。消费者与NameServer没有保持长连接，而是每30秒从NameServer获取所有Topic的信息列表，如果某个时刻某个Broker宕机，消费者可能需要30秒才能知道这个宕机的Broker是哪一个，当然这个值也是可以手动配置的，可根据实际业务来配置该值。消费者在感知Broker存活这一块，有自己的机制，比如每30秒向Broker发送心跳，且Broker每10秒会检测与消费者的连接情况，若某个连接2分钟内（当前时间与最后更新时间差值超过2分钟)没有发送心跳数据，则关闭连接，并向该消费者分组的所有消费者发出通知，分组内消费者重新分配队列继续消费。
+
+文章一开始就说道，NameServer 是整个 RocketMQ 消息服务系统的“大脑”，是指挥消息正确发送、消费的“指挥官”，那么他是如何完成这样完美的指挥任务的呢？
+
+NameServer 被设计为一种无状态的服务注册发现中心，在 NameServer 集群中，各个 NameServer 之间是无感知，无通信的独立节点，任何一个 NameServer 节点挂掉，都不影响整体的消息服务。
+
+Broker 在启动的时候，会向指定的 NameServer 列表中的每个 NameServer 注册，发送自身的元信息到每个 NameServer 中，这些元信息包含但不限于 BrokerName，BrokerAddress，Broker 端口，集群信息，Topic 等信息，这些元信息将保存在 NameServer 的路由信息管理器（RouteInfoManager）中。
+
+当消息生产者在将生产的消息发送出去之前，会从 NameServer 中拉取 Broker 的信息列表，然后通过负载均衡算法从中选择一个 Broker 服务器将消息发送出去。当消息消费者要消费消息之前，也会去 NameServer 中拉取 Broker 的信息列表，从而从 Broker 中获取可消费的消息。
+
+Broker 在首次启动会向 NameServer 注册元信息，启动后也会定期向 NameServer 发送心跳，这个周期默认是 $30$ 秒，当然这个周期可以自定义，支持范围是 $10$ 秒到 $60$ 秒之间，每次心跳发送的数据包都是该 Broker 的元数据信息。
+
+NameServer 也有自动检测能力，NameServer 启动后会注册一个定时任务线程池，默认每隔 $5$ 秒（RocketMQ 4.x 默认是 $10$ 秒）会自动扫描 Broker 列表，对于不再存活的 Broker，将做剔除处理。这动态维护路由信息的能力，并不包含动态通知消息生产者，也就是说生产者并不会及时感知到非存活状态 Broker 被剔除，但是这并不影响消息的正确发送，因为生产者自身提供有容错机制来保证消息的正常发送。
+
+消费者与 NameServer 没有保持长连接，而是每 $30$ 秒从 NameServer 获取所有 Topic 的信息列表，如果某个时刻某个 Broker 宕机，消费者可能需要 $30$ 秒才能知道这个宕机的 Broker 是哪一个，当然这个值也是可以在配置文件中配置的，可根据实际业务来配置该值。消费者在感知 Broker 存活这一块，有自己的机制，比如每 $30$ 秒向 Broker 发送心跳，且 Broker 每 $10$ 秒会检测与消费者的连接情况，若某个连接 $2$ 分钟内（当前时间与最后更新时间差值超过 $2$ 分钟)没有发送心跳数据，则关闭连接，并向该消费者分组的所有消费者发出通知，分组内消费者重新分配队列继续消费。
 
 ## 二、NameServer的启动流程原理
 
-在《[RocketMQ源码之路（一）搭建RocketMQ源码环境](1-1RocketMQ源码阅读环境搭建.md)》中，我们了解了如何使用IDE启动NameServer，那么本小节将和大家一起探讨NameServer的启动流程原理，我们将 从NameServer的启动类NamesrvStartup开始，和大家一起来阅读NameServer在启动源码，帮助大家理解NameServer的启动流程。
-NameServer的启动类NamesrvStartup的main方法如下所示：
+在《[RocketMQ源码之路（一）搭建RocketMQ源码环境](1-2RocketMQ源码阅读环境搭建.md)》中，我们了解了如何使用 IDE 启动 NameServer，那么本小节将和大家一起探讨 NameServer 的启动流程原理，我们将从 NameServer 的启动类 NamesrvStartup 开始，和大家一起来阅读 NameServer 的启动源码，帮助大家理解 NameServer 的启动流程。
+
+NameServer 的启动类 NamesrvStartup 的 main 方法（`org.apache.rocketmq.namesrv.NamesrvStartup#main`）如下所示：
+
+```java
+public class NamesrvStartup {
+
+    private static InternalLogger log;
+
+    /**
+     * 解析命令行参数和配置文件参数，装配到该属性中进行存储，它存储全部的配置k-v，包含-c指定的启动文件和-p打印出来的变量
+     */
+    private static Properties properties = null;
+
+    /**
+     * NameServer配置项：从properties中解析出来的全部NameServer配置
+     */
+    private static NamesrvConfig namesrvConfig = null;
+
+    /**
+     * NettyServer的配置项：从properties中解析出来的全部NameServer RPC服务端启动配置
+     */
+    private static NettyServerConfig nettyServerConfig = null;
+
+    /**
+     * NettyClient的配置项：从properties中解析出来的全部NameServer RPC客户端启动配置
+     */
+    private static NettyClientConfig nettyClientConfig = null;
+
+    /**
+     * DledgerController的配置项：从properties中解析出来的全部Controller需要的启动配置
+     */
+    private static ControllerConfig controllerConfig = null;
+
+    public static void main(String[] args) {
+        // 该方法中是启动NameServer的主要逻辑
+        main0(args);
+
+        // 这个方法主要是启动内嵌在NameServer中的DLedger Controller，
+        // DLedger Controller可以通过配置的形式在NameServer进程中启动，也可以独立部署。
+        // 其主要作用是，用来存储和管理 Broker 的 SyncStateSet 列表，
+        // 并在某个 Broker 的 Master Broker 下线或⽹络隔离时，主动发出调度指令来切换 Broker 的 Master。
+        // 此部分原理暂时不过多介绍，后续将有专题介绍
+        controllerManagerMain();
+    }
+
+}
+```
+
+main 方法上面的 $5$ 个配置项，都是在启动过程中，从环境变量、配置文件以及启动命令行参数中解析并装配的，解释如下：
+
+|      配置项       | 含义                                                         |
+| :---------------: | :----------------------------------------------------------- |
+|    properties     | 解析命令行参数和配置文件参数，装配到该属性中进行存储，它存储全部的配置 k-v，包含 `-c` 指定的启动文件和 `-p` 打印出来的变量 |
+|   namesrvConfig   | NameServer 配置项：从 properties 中解析出来的全部 NameServer 配置 |
+| nettyServerConfig | NettyServer 的配置项：从 properties 中解析出来的全部 NameServer RPC 服务端启动配置 |
+| nettyClientConfig | NettyClient 的配置项：从 properties 中解析出来的全部 NameServer RPC 客户端启动配置 |
+| controllerConfig  | DledgerController 的配置项：从 properties 中解析出来的全部 Controller 需要的启动配置 |
+
+
+
+
 
 ```java
 public static void main(String[] args) {
