@@ -76,6 +76,7 @@ public class NamesrvStartup {
         controllerManagerMain();
     }
 
+  	// 后续代码暂时不展开
 }
 ```
 
@@ -89,7 +90,11 @@ main 方法上面的 $5$ 个配置项，都是在启动过程中，从环境变�
 | nettyClientConfig | NettyClient 的配置项：从 properties 中解析出来的全部 NameServer RPC 客户端启动配置 |
 | controllerConfig  | DledgerController 的配置项：从 properties 中解析出来的全部 Controller 需要的启动配置 |
 
+在 `main(String[] args)` 方法中，包含main0(args)和controllerManagerMain()两个方法， main0逻辑和4.9.X基本差不多，主要新增了controllerManagerMain()。
 
+controllerManagerMain()方法主要是判断当前Namesrv是否配置允许内嵌启动一个Controller实例。
+
+Namesrv配置中有一个特殊的配置项：enableControllerInNamesrv，默认false。若设置enableControllerInNamesrv=true，则Namesrv进程会启动一个Namesrv服务和Controller服务。
 
 
 
