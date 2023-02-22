@@ -29,7 +29,7 @@ export default defineUserConfig({
         logoDark: '/images/logo_dark.png',
         repo: 'itlemon/CodingGuide',
         docsBranch: 'master',
-        repoLabel: '❤',
+        repoLabel: 'GitHub',
         docsDir: 'docs',
         locales: {
             '/': {
