@@ -232,11 +232,11 @@ public static void parseCommandlineAndConfigFile(String[] args) throws Exception
   |    c     |   configFile    |      true      |     false      | Name server config properties file                           |
   |    p     | printConfigItem |     false      |     false      | Print all config items                                       |
 
-  那么在启动过程中，可以在命令行中携带这些命令行选项，比如我指定 NameServerAddr，就可以在启动命令后添加 `-n 192.168.0.1:9876;192.168.0.2:9876` 或者 `--namesrvAddr 192.168.0.1:9876;192.168.0.2:9876` 作为启动参数，对于没有参数数值的选项，直接跟上选项简称或者全称即可，例如： `-h` 或者 `-p` ，那么在解析的时候就可以正确解析到命令行参数。
+  那么在启动过程中，可以在命令行中携带这些命令行选项，比如我指定 NameServerAddr，就可以在启动命令后添加 `-n 192.168.0.1:9876;192.168.0.2:9876` 或者 `--namesrvAddr 192.168.0.1:9876;192.168.0.2:9876` 作为启动参数，对于没有参数数值的选项，直接跟上选项简称或者全称即可，例如： `-h` 或者 `--help` ，那么在解析的时候就可以正确解析到命令行参数。
 
 - 第三步：创建配置对象；
 
-- 第四步：设置 NameServer 的启动监听端口，默认是 9876，读者可以直接修改这里的端口号，但是笔者建议额外在 `NamesrvStartup#buildCommandlineOptions` 方法中添加一个命令行选项，从而支持从命令行中通过`-l`或者`--listenPort`来指定端口，示例代码如下高亮部分：
+- 第四步：设置 NameServer 的启动监听端口，默认是 9876，读者可以直接修改这里的端口号，但是笔者建议额外在 `NamesrvStartup#buildCommandlineOptions` 方法中添加一个命令行选项，例如 `listenPort`，从而支持从命令行中通过`-l`或者`--listenPort`来指定端口，示例代码如下高亮部分：
 
   :::: code-group
   ::: code-group-item 改造代码1
@@ -282,7 +282,7 @@ public static void parseCommandlineAndConfigFile(String[] args) throws Exception
   :::
   ::::
 
-- 第五步：获取命令行中configFile的值，这个值是配置文件的位置，如果包含这个参数，那么将解析该配置文件，将配置加载到各配置对象中，并且检查命令行参数中是否包含选项 `p` ，如果包含，那么将打印所有配置信息并退出进程；
+- 第五步：获取命令行中configFile的值，这个值是配置文件的绝对路径，如果命令行参数中没有配置，那么将采用默认值，默认值是 `{user.home}/namesrv/namesrv.properties`，解析该配置文件（注意配置文件中的要使用键值对的形式，例如： key=value，且 key 要保持和上述配置对象中的属性名称一致），将配置加载到各配置对象中。并且检查命令行参数中是否包含选项 `p` ，如果包含，那么将打印所有配置信息并退出进程；
 
 - 第六步：检查是否配置系统属性值 `rocketmq.home.dir` 或者环境变量 `ROCKETMQ_HOME`，如果没有配置那么将直接退出进程；
 
@@ -292,109 +292,58 @@ public static void parseCommandlineAndConfigFile(String[] args) throws Exception
 
 至此，各项配置的解析装配工作就结束了，接下来开始创建并启动NameServer Controller。
 
-### 2.2 启动NamesrvController
+### 2.2 创建并启动NamesrvController
 
-从启动NamesrvController的start方法可以看出，主要流程也是分为三步：
+这里先贴出创建并启动 NamesrvController 的方法，代码如下：
 
--  第一步：进行controller的初始化工作；
--  第二步：注册钩子函数，当JVM正常退出的时候，将执行该钩子函数，执行关闭controller释放资源；
--  第三步：启动controller。
-
-我们一起来阅读NamesrvStartup的createNamesrvController方法，看看在创建NamesrvController对象的具体流程，代码如下：
 ```java
 /**
- * 创建一个Name Server Controller
- *
- * @param args 命令行参数
- * @return Name Server Controller对象
- * @throws IOException IO异常
- * @throws JoranException Joran异常
+ * 创建并启动NameServerController
  */
-public static NamesrvController createNamesrvController(String[] args) throws IOException, JoranException {
-    // 设置一个系统参数，key为rocketmq.remoting.version，当前版本值为：Version.V4_7_1，数值为355
-    System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
+public static void createAndStartNamesrvController() throws Exception {
+    // 创建NameServerController对象
+    NamesrvController controller = createNamesrvController();
+    // 启动NameServerController对象
+    start(controller);
+    String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
+    log.info(tip);
+    System.out.printf("%s%n", tip);
+}
+```
 
-    // 构建-h 和 -n 的命令行参数option，并且自定义了一个P命令行参数，用于定义namesrv端口
-    Options options = ServerUtil.buildCommandlineOptions(new Options());
-    // 解析完毕后的命令行参数
-    commandLine = ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options), new PosixParser());
-    if (null == commandLine) {
-        // 如果命令行参数为null，则退出虚拟机进程
-        System.exit(-1);
-        return null;
-    }
+从代码中可以看出，主要流程分为两步：
 
-    // 分别创建namesrv和nettyServer的config对象
-    final NamesrvConfig namesrvConfig = new NamesrvConfig();
-    final NettyServerConfig nettyServerConfig = new NettyServerConfig();
-    // 设置netty监听9876端口，这就是为什么namesrv的默认端口是9876，这里可以改成其他端口
-    // 其实还可以修改上述命令行参数代码，自定义一个参数，用来设置监听端口，在启动的时候指定该参数
-    String listenPort;
-    if (commandLine.hasOption('P') && (StringUtils.isNumeric(listenPort = commandLine.getOptionValue('P')))) {
-        nettyServerConfig.setListenPort(Integer.parseInt(listenPort));
-    } else {
-        nettyServerConfig.setListenPort(9876);
-    }
-    // 加载Name server config properties file
-    if (commandLine.hasOption('c')) {
-        String file = commandLine.getOptionValue('c');
-        if (file != null) {
-            InputStream in = new BufferedInputStream(new FileInputStream(file));
-            properties = new Properties();
-            properties.load(in);
-            MixAll.properties2Object(properties, namesrvConfig);
-            MixAll.properties2Object(properties, nettyServerConfig);
+-  第一步：创建NameServerController对象；
+-  第二步：启动NameServerController对象。
 
-            namesrvConfig.setConfigStorePath(file);
+#### 2.2.1 创建NameServerController对象
 
-            System.out.printf("load config properties file OK, %s%n", file);
-            in.close();
-        }
-    }
+我们一起来阅读 NamesrvStartup 的 createNamesrvController 方法，看看在创建 NamesrvController 对象的具体流程，代码如下：
+```java
+/**
+ * 创建NameServerController
+ */
+public static NamesrvController createNamesrvController() {
 
-    // 如果在启动参数加上选项-p，那么将打印出namesrvConfig和nettyServerConfig的属性值信息
-    // 其中namesrvConfig主要配置了namesrv的信息，nettyServerConfig主要配置了netty的属性值信息
-    if (commandLine.hasOption('p')) {
-        InternalLogger console = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_CONSOLE_NAME);
-        MixAll.printObjectProperties(console, namesrvConfig);
-        MixAll.printObjectProperties(console, nettyServerConfig);
-        System.exit(0);
-    }
-
-    // 填充命令行commandLine中参数到namesrvConfig中
-    MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
-
-    // rocketmq_home默认来源于配置rocketmq.home.dir，如果没有配置，将从环境变量中获取ROCKETMQ_HOME参数
-    if (null == namesrvConfig.getRocketmqHome()) {
-        System.out
-                .printf("Please set the %s variable in your environment to match the location of the RocketMQ "
-                                + "installation%n",
-                        MixAll.ROCKETMQ_HOME_ENV);
-        System.exit(-2);
-    }
-
-    // 自定义日志配置logback_namesrv.xml，可以了解博文(https://www.jianshu.com/p/3b9cb5e22052)来理解日志的配置加载
-    LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-    JoranConfigurator configurator = new JoranConfigurator();
-    configurator.setContext(lc);
-    lc.reset();
-    configurator.doConfigure(namesrvConfig.getRocketmqHome() + "/conf/logback_namesrv.xml");
-
-    log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
-
-    MixAll.printObjectProperties(log, namesrvConfig);
-    MixAll.printObjectProperties(log, nettyServerConfig);
-
-    // 根据namesrvConfig, nettyServerConfig来创建一个NamesrvController对象
-    final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
-
-    // 将属性集合properties保存到controller的configuration属性中
+    // 构建NamesrvController对象，构造方法里面创建了KVConfigManager、BrokerHousekeepingService、RouteInfoManager、Configuration对象
+    final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig, nettyClientConfig);
+    // remember all configs to prevent discard
+    // 将配置注册到Configuration中，并被controller持有，防止配置丢失
     controller.getConfiguration().registerConfig(properties);
-
     return controller;
 }
 ```
+调用 NamesrvController 的构造方法创建对象，构造方法里面创建了 KVConfigManager、BrokerHousekeepingService、RouteInfoManager、Configuration 对象，这里简单介绍一下这四个类的作用。
+
+- KVConfigManager：该类是 NameServer 的配置存储类。会将配置信息存储在文件 `{user.home}/namesrv/kvConfig.json`。内部用来存储配置信息的是一个`HashMap<String, HashMap<String, String>>`结构，也就是两级结构。第一级是命名空间，第二集是 KV 对，都是字符串形式。该类的`load`方法可以从文件中加载数据到内存里，`persist`方法可以将内存中的数据再写入到文件中。
+- BrokerHousekeepingService：该类是用来处理 broker 连接发生变化的服务。可以看到这个类实现了ChannelEventListener 接口，除了onChannelConnect 外，其余各个方法均委托给 namesrvController 的 routeInfoManager 的 onChannelDestroy 方法。这里需要 netty 的一些基础，简单来说每一个 broker 与 namesrv通过一个“通道” channel 进行“沟通”。namesrv 通过监测这些通道是否发生某些事件，去做出相应的变动。可以点进 routeInfoManager 的 onChannelDestroy 方法看看，对于宕机的 broker 是如何处理的。这一块的内容将在路由原理中详细讲解，这里了解即可。
+- RouteInfoManager：这就是 RocketMQ 的路由管理器，其内部维护了路由相关的所有元数据信信息，包括 topic 队列、Broker 地址信息、Broker 集群信息、Broker 活跃信息、Broker 上的 FilterServer 列表等。也因此，提供了扫描不活跃的 Broker、删除 topic、获取 topic 列表、注册 Broker、查询 Broker 的 Topic 配置等基础方法，由对应的网络请求或定时任务进行调用。
+- Configuration：用于存储配置文件、命令行中的各项配置，将配置注册到Configuration中，并被controller持有，防止配置丢失。
+
+#### 2.2.2 启动NameServerController对象
+
 start方法代码如下所示：
+
 ```java
 public static NamesrvController start(final NamesrvController controller) throws Exception {
 
