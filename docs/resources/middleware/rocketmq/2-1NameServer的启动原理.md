@@ -335,16 +335,25 @@ public static NamesrvController createNamesrvController() {
 ```
 调用 NamesrvController 的构造方法创建对象，构造方法里面创建了 KVConfigManager、BrokerHousekeepingService、RouteInfoManager、Configuration 对象，这里简单介绍一下这四个类的作用。
 
-- KVConfigManager：该类是 NameServer 的配置存储类。会将配置信息存储在文件 `{user.home}/namesrv/kvConfig.json`。内部用来存储配置信息的是一个`HashMap<String, HashMap<String, String>>`结构，也就是两级结构。第一级是命名空间，第二集是 KV 对，都是字符串形式。该类的`load`方法可以从文件中加载数据到内存里，`persist`方法可以将内存中的数据再写入到文件中。
+- KVConfigManager：该类是 NameServer 的配置存储类。会将配置信息存储在文件 `{user.home}/namesrv/kvConfig.json`。内部用来存储配置信息的是一个`HashMap<String, HashMap<String, String>>`结构，也就是两级结构。第一级是命名空间，第二级是 KV 对，都是字符串形式。该类的`load`方法可以从文件中加载数据到内存里，`persist`方法可以将内存中的数据再写入到文件中。
 - BrokerHousekeepingService：该类是用来处理 broker 连接发生变化的服务。可以看到这个类实现了ChannelEventListener 接口，除了onChannelConnect 外，其余各个方法均委托给 namesrvController 的 routeInfoManager 的 onChannelDestroy 方法。这里需要 netty 的一些基础，简单来说每一个 broker 与 namesrv通过一个“通道” channel 进行“沟通”。namesrv 通过监测这些通道是否发生某些事件，去做出相应的变动。可以点进 routeInfoManager 的 onChannelDestroy 方法看看，对于宕机的 broker 是如何处理的。这一块的内容将在路由原理中详细讲解，这里了解即可。
 - RouteInfoManager：这就是 RocketMQ 的路由管理器，其内部维护了路由相关的所有元数据信信息，包括 topic 队列、Broker 地址信息、Broker 集群信息、Broker 活跃信息、Broker 上的 FilterServer 列表等。也因此，提供了扫描不活跃的 Broker、删除 topic、获取 topic 列表、注册 Broker、查询 Broker 的 Topic 配置等基础方法，由对应的网络请求或定时任务进行调用。
 - Configuration：用于存储配置文件、命令行中的各项配置，将配置注册到Configuration中，并被controller持有，防止配置丢失。
 
 #### 2.2.2 启动NameServerController对象
 
-start方法代码如下所示：
+创建好 NameServerController 对象以后，接下来就是启动它，`NamesrvStartup#start()` 方法是启动 NameServerControler 的主要逻辑代码，主要流程分为三步：
+
+- 第一步：进行controller的初始化工作
+- 第二步：注册钩子函数，当 JVM 正常退出的时候，将执行该钩子函数，执行关闭 controller 释放资源
+- 第三步：启动 controller
+
+代码注释如下所示：
 
 ```java
+/**
+ * 启动NameServerController
+ */
 public static NamesrvController start(final NamesrvController controller) throws Exception {
 
     if (null == controller) {
@@ -353,6 +362,7 @@ public static NamesrvController start(final NamesrvController controller) throws
 
     // 第一步：进行controller的初始化工作
     boolean initResult = controller.initialize();
+
     // 如果初始化controller失败，则直接退出
     if (!initResult) {
         // 关闭controller，释放资源
@@ -367,945 +377,77 @@ public static NamesrvController start(final NamesrvController controller) throws
     }));
 
     // 第三步：启动controller
+    // 启动remotingServer、remotingClient、fileWatchService、routeInfoManager服务
     controller.start();
 
     return controller;
 }
 ```
-在正式启动controller之前，controller进行了很多的初始化工作，主要如下所示：
+对于注册了钩子函数，这里向我们展示了一种非常优雅的编程方式，对于代码中使用到了线程池等资源，建议为其注册钩子函数，每当 JVM 退出的时候，去执行钩子函数逻辑，去执行一些资源关闭的操作，这是一种比较优雅的方式。
 
-- 加载KV配置，主要流程是从本地文件中加载KV配置到内存中，默认加载路径是：`${user.home}/namesrv/kvConfig.json`
-- 构建NettyRemotingServer对象
-- 创建一个用于网络交互的线程池`remotingExecutor`，默认固定线程数为8
-- 注册一个处理器，用于处理不同类型的请求
-- 注册两个定时任务线程池：
-	- NameServer定时每隔10秒钟扫描一次Broker列表，移除已经处于非激活状态的Broker；
-	- NameServer定时每隔10分钟打印一次KV的配置信息
-- 配置TSL协议，可选操作
+在正式启动 controller 之前，controller 进行了很多的初始化工作，主要如下所示：
+
+- 第一步：加载 KV 配置，主要流程是从本地文件中加载 KV 配置到内存中，默认加载路径是：`${user.home}/namesrv/kvConfig.json`
+- 第二步：构建网络通讯组件：NettyRemotingServer 对象、NettyRemotingClient 对象
+- 第三步：初始化线程池，这里面初始化了两个线程池，一个（defaultExecutor）用于处理 Broker 相关请求的线程池，一个（clientRequestExecutor）用于处理客户端（生产者、消费者）相关请求的线程池
+- 第四步：注册处理器，用于处理不同类型的请求：
+  - ClusterTestRequestProcessor 用于处理测试请求
+  - ClientRequestProcessor 用于处理客户端请求，目前包含根据Topic获取路由信息
+  - DefaultRequestProcessor 用于处理其余 NameServer 的请求：比如 KV 配置管理、Broker 注册、Broker 心跳、更新/查询 Namesrv 配置等
+
+- 第五步：注册三个定时任务线程池：
+  - NameServer 定时默认每隔 $5$ 秒钟（可通过配置文件修改）扫描一次 Broker 列表，移除已经处于非激活状态的 Broker
+  - NameServer 定时每隔 $10$ 分钟（可通过配置文件修改）打印一次 KV 的配置信息
+  - NameServer 定时每秒钟打印水位信息，将 clientRequestThreadPoolQueue 和 defaultThreadPoolQueue 两个队列中的任务数和第一个未执行任务的延迟时间打印出来（当前时间戳减去任务的创建时间戳）
+
+- 第六步：配置 SSL（Secure Sockets Layer 安全套接字协议）协议，这里支持三种模式：disabled、permissive、enforcing
+  - disabled：不支持 SSL，所有 SSL 协议的挥手请求都将被拒绝，连接被关闭
+  - permissive：SSL 是可以选的，服务端可以处理客户端的 SSL 的连接或者非 SSL 连接，该选项是默认值
+  - enforcing：SSL 是必需的，非 SSL 的连接都将被拒绝
+
+- 第七步：添加 ZoneRouteRPCHook，支持云特性：多 zone 部署和管理，ZoneRouteRPCHook 内部的主要逻辑是在请求（GET_ROUTEINFO_BY_TOPIC）的时候，通过 zone 配置，可以实现路由信息的过滤，然后返回给客户端，实现多 zone 部署和管理
 
 具体代码分析如下所示：
 ```java
 public boolean initialize() {
-
     // 第一步：加载KV配置，主要流程是从本地文件中加载KV配置到内存中
     // 默认加载路径是：${user.home}/namesrv/kvConfig.json
-    this.kvConfigManager.load();
+    loadConfig();
 
-    // 第二步：构建NettyRemotingServer对象
-    this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
+    // 第二步：构建网络通讯组件：NettyRemotingServer对象、NettyRemotingClient对象
+    initiateNetworkComponents();
 
-    // 第三步：创建一个用于网络交互的线程池，默认固定线程数为8
-    this.remotingExecutor =
-            Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(),
-                    new ThreadFactoryImpl("RemotingExecutorThread_"));
+    // 第三步：初始化线程池，这里面初始化了两个线程池，
+    // 一个(defaultExecutor)用于处理Broker相关请求的线程池，一个(clientRequestExecutor)用于处理客户端（生产者、消费者）相关请求的线程池
+    initiateThreadExecutors();
 
-    // 第四步：注册一个处理器，用于处理不同类型的请求
-    this.registerProcessor();
+    // 第四步：注册处理器，用于处理不同类型的请求
+    // ClusterTestRequestProcessor用于处理测试请求
+    // ClientRequestProcessor用于处理客户端请求，目前包含根据Topic获取路由信息
+    // DefaultRequestProcessor用于处理其余NameServer的请求：比如KV配置管理、Broker注册、Broker心跳、更新/查询Namesrv配置
+    registerProcessor();
 
-    // 第五步：注册两个定时任务线程池
-    // 1.NameServer定时每隔10秒钟扫描一次Broker列表，移除已经处于非激活状态的Broker；
-    // 2.NameServer定时每隔10分钟打印一次KV的配置信息
-    this.scheduledExecutorService.scheduleAtFixedRate(
-            NamesrvController.this.routeInfoManager::scanNotActiveBroker, 5, 10, TimeUnit.SECONDS);
+    // 第五步：注册三个定时任务线程池
+    // 1.NameServer定时默认每隔5秒钟（可通过配置文件修改）扫描一次Broker列表，移除已经处于非激活状态的Broker
+    // 2.NameServer定时每隔10分钟（可通过配置文件修改）打印一次KV的配置信息
+    // 3.NameServer定时每秒钟打印水位信息，将clientRequestThreadPoolQueue和defaultThreadPoolQueue
+    // 两个队列中的任务数和第一个未执行任务的延迟时间打印出来（当前时间戳减去任务的创建时间戳）
+    startScheduleService();
 
-    this.scheduledExecutorService
-            .scheduleAtFixedRate(NamesrvController.this.kvConfigManager::printAllPeriodically, 1, 10,
-                    TimeUnit.MINUTES);
+    // 第六步：配置SSL（Secure Sockets Layer 安全套接字协议）协议，这里支持三种模式：disabled、permissive、enforcing
+    // disabled:不支持SSL，所有SSL协议的挥手请求都将被拒绝，连接被关闭
+    // permissive:SSL是可以选的，服务端可以处理客户端的SSL的连接或者非SSL连接，该选项是默认值
+    // enforcing:SSL是必需的，非SSL的连接都将被拒绝
+    initiateSslContext();
 
-    // 第六步：配置TSL协议，可选操作
-    if (TlsSystemConfig.tlsMode != TlsMode.DISABLED) {
-        // Register a listener to reload SslContext
-        try {
-            fileWatchService = new FileWatchService(
-                    new String[] {
-                            TlsSystemConfig.tlsServerCertPath,
-                            TlsSystemConfig.tlsServerKeyPath,
-                            TlsSystemConfig.tlsServerTrustCertPath
-                    },
-                    new FileWatchService.Listener() {
-                        boolean certChanged, keyChanged = false;
-
-                        @Override
-                        public void onChanged(String path) {
-                            if (path.equals(TlsSystemConfig.tlsServerTrustCertPath)) {
-                                log.info("The trust certificate changed, reload the ssl context");
-                                reloadServerSslContext();
-                            }
-                            if (path.equals(TlsSystemConfig.tlsServerCertPath)) {
-                                certChanged = true;
-                            }
-                            if (path.equals(TlsSystemConfig.tlsServerKeyPath)) {
-                                keyChanged = true;
-                            }
-                            if (certChanged && keyChanged) {
-                                log.info("The certificate and private key changed, reload the ssl context");
-                                certChanged = keyChanged = false;
-                                reloadServerSslContext();
-                            }
-                        }
-
-                        private void reloadServerSslContext() {
-                            ((NettyRemotingServer) remotingServer).loadSslContext();
-                        }
-                    });
-        } catch (Exception e) {
-            log.warn("FileWatchService created error, can't load the certificate dynamically");
-        }
-    }
-
+    // 第七步：添加ZoneRouteRPCHook，支持云特性：多zone部署和管理
+    // ZoneRouteRPCHook内部的主要逻辑是在请求（GET_ROUTEINFO_BY_TOPIC）的时候，
+    // 通过zone配置，可以实现路由信息的过滤，然后返回给客户端，实现多zone部署和管理
+    initiateRpcHooks();
     return true;
 }
 ```
-对于注册了钩子函数，这里向我们展示了一种非常优雅的编程方式，对于代码中使用到了线程池等资源，建议为其注册钩子函数，每当JVM退出的时候，去执行钩子函数逻辑，去执行一些资源关闭的操作，这是一种比较优雅的方式。
-
-## 三、NameServer的路由原理
-
-文章一开始就提到，NameServer是保证消息正确地从生产者到消费者的“指挥官”，它提供了路由管理，服务注册与服务发现、故障剔除等机制，这些机制的背后原理都都依赖于NameServer的路由，本小节将着重介绍NameServer的路由原理。
-
-### 3.1 路由信息管理器
-
-NameServer有一个路由信息管理器`RouteInfoManager`，它位于`org.apache.rocketmq.namesrv.routeinfo`包内，其内部存储了topic与broker的各种信息与关系，是RocketMQ实现服务注册与发现、故障剔除的基础。
-RouteInfoManager内部维护了多个HashMap数据结构，用于存储路由信息，具体的内容如下所示：
-
-```java
-/**
- * 该Map存储的是Topic消息队列的路由信息，发送具体消息时可根据该Map来进行负载均衡
- */
-private final HashMap<String/* topic */, List<QueueData>> topicQueueTable;
-
-/**
- * Broker的基础信息表，键名是Broker的名称，BrokerData中存储了Broker的名称，
- * 所属集群名称以及主Broker和备Broker的地址信息
- */
-private final HashMap<String/* brokerName */, BrokerData> brokerAddrTable;
-
-/**
- * 集群与Broker名称的映射表，可以方便知道一个集群下有哪些Broker
- */
-private final HashMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
-
-/**
- * 该Map存储的是每个Broker的存活信息，Name Server每次收到心跳后会将此引用指向最新的表
- */
-private final HashMap<String/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
-
-/**
- * 该Map存储的是Broker与Filter Server之间的关系表
- */
-private final HashMap<String/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
-```
-从上面的数据结构看来，维护NameServer的路由信息应该还是很简单的，没有太过于抽象的概念，从数据结构中也能得出以下几个结论：
-
-- 一个Topic包含多个消息队列，其数据是存储在`topicQueueTable`中。
-- 多个Broker拥有同一个Broker Name，它们之间使用BrokerId来进行区分，在BrokerData内部维护了一个HashMap结构来存储。
-- 一个RocketMQ集群可包含多个名称唯一的Broker。
-- 一个Broker可与多个Filter Server进行绑定。
-
-其中QueueData、BrokerData、BrokerLiveInfo分别用于存储队列信息、Broker信息及Broker存活信息等数据，其类图如下所示：
-```mermaid
-classDiagram
-    class QueueData{
-	    -String brokerName
-	    -int readQueueNums
-	    -int writeQueueNums
-	    -int perm
-	    -int topicSynFlag
-	}
-	class BrokerData{
-	    -String cluster
-	    -String brokerName
-	    -int writeQueueNums
-	    -HashMap brokerAddrs
-	}
-	class BrokerLiveInfo{
-	    -long lastUpdateTimestamp
-	    -DataVersion dataVersion
-	    -Channel channel
-	    -String haServerAddr
-	}
-```
-QueueData中各个属性含义如下所示：
-
-- brokerName：当前Queue所属的Broker的名称
-- readQueueNums：读Queue的数量
-- writeQueueNums：写Queue的数量
-- perm：读写权限，{@link org.apache.rocketmq.common.constant.PermName}
-- topicSynFlag：topic同步标记，{@link org.apache.rocketmq.common.sysflag.TopicSysFlag}
-
-BrokerData中各个属性含义如下所示：
-
-- cluster：所属集群名称
-- brokerName：Broker名称
-- brokerAddrs：主备Broker信息表，键为BrokerID，值为Broker的地址
-
-BrokerLiveInfo中各个属性含义如下所示：
-
-- lastUpdateTimestamp：上一次更新的时间戳，用于判断该Broker是否已经过期
-- dataVersion：Broker信息版本
-- channel：socket通道
-- haServerAddr：haServer的地址，是Slave从Master拉取数据时链接的地址
-
-本文开始的第一张图是一个2主2从的RocketMQ集群部署方式，集群中包含2个Master的Broker和2个Slave的Broker，使用BrokerData存储上述部署方式，其表现为以下形式：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213185641205.png)
-我们启动一个NameServer服务，并且启动四个Broker服务（分别是BrokerStartup-am、BrokerStartup-as、BrokerStartup-bm、BrokerStartup-bs），按照上面的图展示的方式来进行部署，一起验证一下RouteInfoManager内部的数据存储的内容。
-在本机IntelliJ IDEA中启动四个Broker，需要为四个Broker分别设置配置文件，我们参考《[RocketMQ源码之路（一）搭建RocketMQ源码环境](1-1RocketMQ源码阅读环境搭建.md)》中，参考Broker的配置方式，分别配置四份，具体的配置文件参考代码中的[配置文件](https://github.com/itlemon/itlemon-rocketmq/tree/master/rocketmq_home)，IntelliJ IDEA中的配置面板需要改成如下所示：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213215432215.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
-图中展示红框是设置了一个自定义的命令行参数，支持Broker自定义启动端口（默认是10911，需要在同一机器启动多个Broker服务，最好支持自定义端口设置），这需要修改一下`BrokerStartup`这个类的源码，具体可参考上面BrokerStartup的自定义启动端口的代码，这里给出[github地址](https://github.com/itlemon/itlemon-rocketmq/blob/master/broker/src/main/java/org/apache/rocketmq/broker/BrokerStartup.java)，不再在文章中重复赘述了。需要注意的一点是，如果设置的broker-am的启动端口是10911，那么broker-as的不能设置为10912，因为每个每个broker启动后还会占用启动端口的后一个端口。
-我们继续按照顺序分别启动四个Broker服务，最后启动的broker-bs，并且给NameServer的RouteInfoManager中的registerBroker方法加上断点，因为Broker向NameServer发送心跳的时候会调用这个方法来维护路由表，加上断点后可以很方便地查看运行时数据。
-
-- topicQueueTable：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213231041621.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
-上图中topicQueueTable对应于运行时的数据就是：
-```json
-{
-	"testCluster": [
-		{
-			"brokerName": "broker-a",
-			"readQueueNums": 16,
-			"writeQueueNums": 16,
-			"perm": 7,
-			"topicSynFlag": 0
-		},
-		{
-			"brokerName": "broker-b",
-			"readQueueNums": 16,
-			"writeQueueNums": 16,
-			"perm": 7,
-			"topicSynFlag": 0
-		}
-	]
-}
-```
-- brokerAddrTable：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213232601362.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
-上图中brokerAddrTable对应于运行时的数据就是：
-```json
-{
-	"broker-a": {
-		"cluster": "testCluster",
-		"brokerName": "broker-a",
-		"brokerAddrs": {
-			"0": "172.20.192.218:10911",
-			"1": "172.20.192.218:10921"
-		}
-	},
-	"broker-b": {
-		"cluster": "testCluster",
-		"brokerName": "broker-b",
-		"brokerAddrs": {
-			"0": "172.20.192.218:10931",
-			"1": "172.20.192.218:10941"
-		}
-	}
-}
-```
-- clusterAddrTable：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213223306896.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
-上图中clusterAddrTable对应于运行时的数据就是：
-```json
-{
-	"testCluster": {
-		"broker-b": "DEFAULT_OBJECT",
-		"broker-a": "DEFAULT_OBJECT"
-	}
-}
-```
-这里需要说明一点，HashSet底层的实现结构仍然是HashMap，所以这里使用HashMap的方式来展示HashSet，读者关心Map的键即可。
-- brokerLiveTable：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213233041302.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
-上图中brokerLiveTable对应于运行时的数据就是：
-```json
-{
-	"172.20.192.218:10921": {
-		"lastUpdateTimestamp": 1613230150507,
-		"dataVersion": "dataVersionObject",
-		"channel": "channelObject",
-		"haServerAddr": "172.20.192.218:10922"
-	},
-	"172.20.192.218:10911": {
-		"lastUpdateTimestamp": 1613230145828,
-		"dataVersion": "dataVersionObject",
-		"channel": "channelObject",
-		"haServerAddr": "172.20.192.218:10912"
-	},
-	"172.20.192.218:10941": {
-		"lastUpdateTimestamp": 1613230166459,
-		"dataVersion": "dataVersionObject",
-		"channel": "channelObject",
-		"haServerAddr": "172.20.192.218:10942"
-	},
-	"172.20.192.218:10931": {
-		"lastUpdateTimestamp": 1613230154587,
-		"dataVersion": "dataVersionObject",
-		"channel": "channelObject",
-		"haServerAddr": "172.20.192.218:10932"
-	}
-}
-```
-
-### 3.2 路由信息注册
-
-路由信息注册通常是指，将自身的信息告诉服务注册中心，在RocketMQ中，这里的“自身”是指Broker，而服务注册中心指得就是NameServer。Broker在启动后，会向所有的NameServer注册自身的元信息，通常包括：集群名称（clusterName）、Broker地址（brokerAddr）、Broker名称（brokerName）、Broker ID（brokerId）、高可用地址（haServerAddr）、Topic相关信息（topicConfigWrapper）、过滤服务器列表、通信通道等信息等。这些元信息的注册，都是通过心跳机制来实现的，所谓的心跳机制，一般都是通过定时任务来实现的，按照一定的频率向NameServer发送元信息数据，从而实现续约。每个Broker会每隔30秒向NameServer发送心跳，NameServer接收到Broker心跳数据后，会去实时更新brokerLiveTable中BrokerLiveInfo的lastUpdateTimestamp字段（上一次心跳时间戳），当然，NameServer也有检查机制，会每隔10秒扫描brokerLiveTable，如果发现某个Broker的lastUpdateTimestamp字段超过2min没有更新，那么就认为该Broker存在故障，NameServer会主动将其从路由表中剔除，同时关闭通信通道。
-那么Broker是如何向NameServer进行注册的呢？下面的内容将一一揭秘。
-
-从BrokerController的start()方法可以看出，Broker在启动的时候，会注册一个定时任务，每隔30s（默认值，可配置10~60s）向NameServer发送元数据信息。`brokerConfig.getRegisterNameServerPeriod()`的默认值是30s。
-```java
-// 注册一个定时任务，默认每隔30s向NameServer发送元数据信息
-this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                BrokerController.this.registerBrokerAll(true,
-                        false, brokerConfig.isForceRegister());
-            } catch (Throwable e) {
-                log.error("registerBrokerAll Exception", e);
-            }
-        }, 1000 * 10, Math.max(10000,
-        Math.min(brokerConfig.getRegisterNameServerPeriod(), 60000)),
-        TimeUnit.MILLISECONDS);
-```
-具体的注册行为代码需要进入到registerBrokerAll方法中，这里将分析后的registerBrokerAll方法贴在下面：
-```java
-/**
- * 注册Broker元信息到NameServer列表中
- *
- * @param checkOrderConfig 是否检查顺序消息配置
- * @param oneway 是否是单向消息，如果是，那么就不需要知道注册结果，不同于同步和异步消息
- * @param forceRegister 是否是强制注册
- */
-public synchronized void registerBrokerAll(final boolean checkOrderConfig, boolean oneway, boolean forceRegister) {
-    // 将Topic配置进行包装，其实就是一些默认的topic信息
-    TopicConfigSerializeWrapper topicConfigWrapper =
-            this.getTopicConfigManager().buildTopicConfigSerializeWrapper();
-
-    // 如果Broker只有读权限或者写权限，那么需要将Topic的权限设置为和Broker相同
-    if (!PermName.isWriteable(this.getBrokerConfig().getBrokerPermission())
-            || !PermName.isReadable(this.getBrokerConfig().getBrokerPermission())) {
-        ConcurrentHashMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>();
-        for (TopicConfig topicConfig : topicConfigWrapper.getTopicConfigTable().values()) {
-            TopicConfig tmp =
-                    new TopicConfig(topicConfig.getTopicName(), topicConfig.getReadQueueNums(),
-                            topicConfig.getWriteQueueNums(),
-                            this.brokerConfig.getBrokerPermission());
-            topicConfigTable.put(topicConfig.getTopicName(), tmp);
-        }
-        topicConfigWrapper.setTopicConfigTable(topicConfigTable);
-    }
-
-    // 判断是否需要注册，如果不满足强制注册，那么就需要调用needRegister来判断是否需要注册
-    // needRegister内部逻辑也很简单，就是去请求NameServer，判断NameServer存储的Broker信息
-    // 是否和当前的Broker版本信息是否一致，如果是一致的，那么就不需要注册
-    if (forceRegister || needRegister(this.brokerConfig.getBrokerClusterName(),
-            this.getBrokerAddr(),
-            this.brokerConfig.getBrokerName(),
-            this.brokerConfig.getBrokerId(),
-            this.brokerConfig.getRegisterBrokerTimeoutMills())) {
-        // Broker向NameServer注册的主要方法
-        doRegisterBrokerAll(checkOrderConfig, oneway, topicConfigWrapper);
-    }
-}
-```
-在doRegisterBrokerAll方法内，最主要的就是调用brokerOuterAPI的registerBrokerAll接口来向NameServer进行注册。
-```java
-List<RegisterBrokerResult> registerBrokerResultList = this.brokerOuterAPI.registerBrokerAll(
-                this.brokerConfig.getBrokerClusterName(),
-                this.getBrokerAddr(),
-                this.brokerConfig.getBrokerName(),
-                this.brokerConfig.getBrokerId(),
-                this.getHAServerAddr(),
-                topicConfigWrapper,
-                this.filterServerManager.buildNewFilterServerList(),
-                oneway,
-                this.brokerConfig.getRegisterBrokerTimeoutMills(),
-                this.brokerConfig.isCompressedRegister());
-```
-接下来的操作就是遍历每一个NameServer服务地址，然后分别向每一个NameServer进行注册操作，具体代码如下所示：
-```java
-public List<RegisterBrokerResult> registerBrokerAll(
-        final String clusterName,
-        final String brokerAddr,
-        final String brokerName,
-        final long brokerId,
-        final String haServerAddr,
-        final TopicConfigSerializeWrapper topicConfigWrapper,
-        final List<String> filterServerList,
-        final boolean oneway,
-        final int timeoutMills,
-        final boolean compressed) {
-
-    // 封装注册结果的容器
-    final List<RegisterBrokerResult> registerBrokerResultList = Lists.newArrayList();
-    // 获取NameServer列表
-    List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
-    if (nameServerAddressList != null && !nameServerAddressList.isEmpty()) {
-        // 构建注册Broker的请求头对象
-        final RegisterBrokerRequestHeader requestHeader = new RegisterBrokerRequestHeader();
-        // 将Broker的主要元信息存储到请求头中
-        requestHeader.setBrokerAddr(brokerAddr);
-        requestHeader.setBrokerId(brokerId);
-        requestHeader.setBrokerName(brokerName);
-        requestHeader.setClusterName(clusterName);
-        requestHeader.setHaServerAddr(haServerAddr);
-        requestHeader.setCompressed(compressed);
-
-        // 构建请求体
-        RegisterBrokerBody requestBody = new RegisterBrokerBody();
-        // 将topic配置信息及过滤器服务信息数据封装到请求体中
-        requestBody.setTopicConfigSerializeWrapper(topicConfigWrapper);
-        requestBody.setFilterServerList(filterServerList);
-        // 将请求体进行编码（是否进行gzip压缩，默认为false）
-        final byte[] body = requestBody.encode(compressed);
-        final int bodyCrc32 = UtilAll.crc32(body);
-        requestHeader.setBodyCrc32(bodyCrc32);
-        final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
-        // 遍历所有的NameServer地址，分别向每一个NameServer进行注册
-        for (final String namesrvAddr : nameServerAddressList) {
-            brokerOuterExecutor.execute(() -> {
-                try {
-                    RegisterBrokerResult result =
-                            registerBroker(namesrvAddr, oneway, timeoutMills, requestHeader, body);
-                    if (result != null) {
-                        registerBrokerResultList.add(result);
-                    }
-
-                    log.info("register broker[{}]to name server {} OK", brokerId, namesrvAddr);
-                } catch (Exception e) {
-                    log.warn("registerBroker Exception, {}", namesrvAddr, e);
-                } finally {
-                    countDownLatch.countDown();
-                }
-            });
-        }
-
-        try {
-            countDownLatch.await(timeoutMills, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-        }
-    }
-
-    return registerBrokerResultList;
-}
-```
-分别向每一个NameServer注册时候，调用的都是同一个方法：registerBroker，底层调用的都是由Netty封装的远程连接，通过请求码来获取远程调用连接，将注册信息发送过去。注册Broker使用到的请求码是`RequestCode.REGISTER_BROKER`，不同的需求使用的请求码是不一样的，比如注销Broker使用到的是`RequestCode.UNREGISTER_BROKER`。
-```java
-private RegisterBrokerResult registerBroker(
-        final String namesrvAddr,
-        final boolean oneway,
-        final int timeoutMills,
-        final RegisterBrokerRequestHeader requestHeader,
-        final byte[] body
-) throws RemotingCommandException, MQBrokerException, RemotingConnectException, RemotingSendRequestException,
-        RemotingTimeoutException,
-        InterruptedException {
-    // 根据请求码RequestCode.REGISTER_BROKER获取注册Broker信息的远程连接
-    RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.REGISTER_BROKER, requestHeader);
-    request.setBody(body);
-
-    // 如果是单向消息，也就是不管注册结果如何，那么就调用不同的方法来进行注册
-    if (oneway) {
-        try {
-            this.remotingClient.invokeOneway(namesrvAddr, request, timeoutMills);
-        } catch (RemotingTooMuchRequestException e) {
-            // Ignore
-        }
-        return null;
-    }
-
-    // 同步注册，也就是阻塞等待注册结果
-    RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMills);
-    assert response != null;
-    switch (response.getCode()) {
-        case ResponseCode.SUCCESS: {
-            // 解析注册结果
-            RegisterBrokerResponseHeader responseHeader =
-                    (RegisterBrokerResponseHeader) response
-                            .decodeCommandCustomHeader(RegisterBrokerResponseHeader.class);
-            RegisterBrokerResult result = new RegisterBrokerResult();
-            result.setMasterAddr(responseHeader.getMasterAddr());
-            result.setHaServerAddr(responseHeader.getHaServerAddr());
-            if (response.getBody() != null) {
-                result.setKvTable(KVTable.decode(response.getBody(), KVTable.class));
-            }
-            return result;
-        }
-        default:
-            break;
-    }
-
-    throw new MQBrokerException(response.getCode(), response.getRemark());
-}
-```
-再往底层分析就是涉及到Netty的知识了，本文主要围绕RocketMQ来进行源码分析，对于Netty，后续将通过其他的文章来讨论。以上内容就是Broker在启动的过程中向指定的NameServer注册元信息的流程分析。
-
-Broker向指定的NameServer发送了心跳，NameServer接收到心跳后是如何处理的呢？本节中第一小节路由信息管理器中阐述了Broker发送过来的心跳数据是以何种形式存储在路由管理器中，接下来将解析路由信息维护的源代码，方便大家弄清楚其中的原理。
-
-NameServer在初始化的时候，注册了一个处理器DefaultRequestProcessor，专门用于处理网络请求，已经没有印象的读者可以去文章的开始处看NamesrvController的initialize方法。当远程的注册请求到达的时候，都会由DefaultRequestProcessor的processRequest方法来进行处理，该方法其实就是起到了路由的作用，内部根据请求码来判断该调用哪个API来进行具体的操作，对于Broker注册元信息，其实就是转发给RouteInfoManager的registerBroker方法来进行处理的。
-```java
-/**
- * 注册Broker
- *
- * @param clusterName broker集群名称，来自broker.conf中配置的属性brokerClusterName的值
- * @param brokerAddr broker地址
- * @param brokerName broker名称，来自broker.conf中配置的属性brokerName的值
- * @param brokerId broker ID，来自broker.conf中配置的属性brokerId的值
- * @param haServerAddr ha server地址
- * @param topicConfigWrapper topic配置包装类对象
- * @param filterServerList filter server列表
- * @param channel netty channel
- * @return RegisterBrokerResult 注册Broker结果
- */
-public RegisterBrokerResult registerBroker(
-        final String clusterName,
-        final String brokerAddr,
-        final String brokerName,
-        final long brokerId,
-        final String haServerAddr,
-        final TopicConfigSerializeWrapper topicConfigWrapper,
-        final List<String> filterServerList,
-        final Channel channel) {
-    // 封装注册Broker的结果实体类
-    RegisterBrokerResult result = new RegisterBrokerResult();
-    try {
-        try {
-            // 第一步：获取一个写锁，防止并发修改路由表中的数据导致异常
-            this.lock.writeLock().lockInterruptibly();
-
-            // 第二步：维护集群与BrokerName的路由表（关系表）
-            // 如果clusterAddrTable中集群名对应的brokerName集合存在，那么就直接存入，否则创建一个新的HashSet后存入
-            Set<String> brokerNames = this.clusterAddrTable.computeIfAbsent(clusterName, k -> new HashSet<>());
-            brokerNames.add(brokerName);
-
-            // 标记是否为第一次注册为false
-            boolean registerFirst = false;
-
-            // 第三步：维护brokerName和brokerData的路由表（关系表）
-            // 根据brokerName来获取brokerData数据，如果brokerData不存在，那么可认为该Broker这是第一次注册
-            BrokerData brokerData = this.brokerAddrTable.get(brokerName);
-            if (null == brokerData) {
-                registerFirst = true;
-                brokerData = new BrokerData(clusterName, brokerName, new HashMap<>());
-                this.brokerAddrTable.put(brokerName, brokerData);
-            }
-            // 下面的这段代码其实我个人更加愿意将其使用代码块封装起来，其作用就是如果注册的Broker的ID发生了变化，
-            // 那么将原有注册的brokerAddr删除，再重新将新的信息存入到brokerData中的brokerAddrs
-            // 具体的可看下面的英文描述，也就是切换slave的broker为master的操作
-            Map<Long, String> brokerAddrsMap = brokerData.getBrokerAddrs();
-            //Switch slave to master: first remove <1, IP:PORT> in namesrv, then add <0, IP:PORT>
-            //The same IP:PORT must only have one record in brokerAddrTable
-            brokerAddrsMap.entrySet().removeIf(
-                    item -> null != brokerAddr && brokerAddr.equals(item.getValue()) && brokerId != item.getKey());
-
-            // 将broker信息存入到brokerData的表brokerAddrs中
-            String oldAddr = brokerData.getBrokerAddrs().put(brokerId, brokerAddr);
-            // 如果返回的oldAddr为null，则说明新存入的，表brokerAddrs不存在键为brokerId的数据，这种也认为是第一次注册
-            registerFirst = registerFirst || (null == oldAddr);
-
-            // 第四步：判断是否需要更新topicConfig信息，只有主Broker注册的时候（topicConfigWrapper始终不为空）才会去进一步判断
-            if (null != topicConfigWrapper
-                    && MixAll.MASTER_ID == brokerId) {
-                // 如果是第一次注册，或者topicConfig的版本发生了变化，那么就需要更新
-                // 第一次注册，其实带来的topic都是一些默认的topic信息，当生产者发送主题的时候，如果主题没有创建，且
-                // brokerConfig中的字段autoCreateTopicEnable为true的时候，那么将返回默认的主题路由信息
-                if (this.isBrokerTopicConfigChanged(brokerAddr, topicConfigWrapper.getDataVersion())
-                        || registerFirst) {
-                    ConcurrentMap<String, TopicConfig> tcTable =
-                            topicConfigWrapper.getTopicConfigTable();
-                    if (tcTable != null) {
-                        for (Map.Entry<String, TopicConfig> entry : tcTable.entrySet()) {
-                            // 第五步：维护topicQueueTable路由表，没有则创建QueueData，否则根据需要来更新
-                            this.createAndUpdateQueueData(brokerName, entry.getValue());
-                        }
-                    }
-                }
-            }
-
-            // 第六步：维护brokerLiveTable路由表，将broker的信息存入到表中
-            BrokerLiveInfo prevBrokerLiveInfo = this.brokerLiveTable.put(brokerAddr,
-                    new BrokerLiveInfo(
-                            System.currentTimeMillis(),
-                            topicConfigWrapper.getDataVersion(),
-                            channel,
-                            haServerAddr));
-            // 如果返回的为null，则认为是将新的broker注册到表中
-            if (null == prevBrokerLiveInfo) {
-                log.info("new broker registered, {} HAServer: {}", brokerAddr, haServerAddr);
-            }
-
-            // 第七步：维护filterServerTable，这一块内容后续分析
-            if (filterServerList != null) {
-                if (filterServerList.isEmpty()) {
-                    this.filterServerTable.remove(brokerAddr);
-                } else {
-                    this.filterServerTable.put(brokerAddr, filterServerList);
-                }
-            }
-
-            // 第八步：如果是非master的broker注册，还需要将master的信息返回给broker端
-            if (MixAll.MASTER_ID != brokerId) {
-                String masterAddr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
-                if (masterAddr != null) {
-                    BrokerLiveInfo brokerLiveInfo = this.brokerLiveTable.get(masterAddr);
-                    if (brokerLiveInfo != null) {
-                        result.setHaServerAddr(brokerLiveInfo.getHaServerAddr());
-                        result.setMasterAddr(masterAddr);
-                    }
-                }
-            }
-        } finally {
-            // 第九步：释放写锁
-            this.lock.writeLock().unlock();
-        }
-    } catch (Exception e) {
-        log.error("registerBroker Exception", e);
-    }
-
-    return result;
-}
-```
-以上的代码就是NameServer接收到Broker注册信息后维护路由表的代码，逻辑清晰明了，简单，设计中加入了写锁，保证了并发情况下的线程安全。读者直接阅读上述的代码注释就可以明白路由信息维护的流程及原理。
-### 3.3 路由信息剔除
-
-接下来我们继续一起探讨一下路由信息剔除的原理。在『3.2 路由信息注册』小节中，我们已经分析了部分路由信息剔除的原理：每个Broker会每隔30秒向NameServer发送心跳，NameServer接收到Broker心跳数据后，会去实时更新brokerLiveTable中BrokerLiveInfo的lastUpdateTimestamp字段（上一次心跳时间戳），当然，NameServer也有检查机制，会每隔10秒扫描brokerLiveTable，如果发现某个Broker的lastUpdateTimestamp字段超过2min没有更新，那么就认为该Broker存在故障，NameServer会主动将其从路由表中剔除，同时关闭通信通道。
-对于RocketMQ来说，剔除路由信息主要有两个方式：
-
-- 故障剔除：故障剔除就是某个Broker超过2min没有发送心跳给NameServer，那么NameServer就会认为该Broker发生了故障，就会主动将其剔除，并同时更新所有的路由表。
-- 主动注销：Broker正常下线，向NameServer发送注销的请求，那么NameServer就会去实时更新全部路由表。
-
-对于故障剔除和主动注销，底层使用到的代码是一样的，区别是前者是NameServer通过定时扫描，定期检查的方式来主动发现的，后者是Broker下线时主动发送注销请求告知NameServer的，在NameServer端处理方式是一样的。
-
-**从故障剔除的角度来分析：**
-NameServer在初始化的时候注册了一个定时任务，每隔10s扫描一次brokerLiveTable表，超过2min没有更新的Broker将被其剔除。
-```java
-// NameServer定时每隔10秒钟扫描一次Broker列表，移除已经处于非激活状态的Broker
-this.scheduledExecutorService.scheduleAtFixedRate(
-	NamesrvController.this.routeInfoManager::scanNotActiveBroker, 5, 10, TimeUnit.SECONDS);
-```
-这里需要重点关注RouteInfoManager的scanNotActiveBroker方法：
-```java
-/**
- * 扫描brokerLiveTable，将超过2min没有更新的Broker移除
- */
-public void scanNotActiveBroker() {
-    Iterator<Entry<String, BrokerLiveInfo>> it = this.brokerLiveTable.entrySet().iterator();
-    while (it.hasNext()) {
-        Entry<String, BrokerLiveInfo> next = it.next();
-        long last = next.getValue().getLastUpdateTimestamp();
-        // 上一次更新时间戳+120s小于当前时间戳说明Broker已经过期
-        if ((last + BROKER_CHANNEL_EXPIRED_TIME) < System.currentTimeMillis()) {
-            // 关闭通信通道
-            RemotingUtil.closeChannel(next.getValue().getChannel());
-            // 剔除broker
-            it.remove();
-            log.warn("The broker channel expired, {} {}ms", next.getKey(), BROKER_CHANNEL_EXPIRED_TIME);
-            // 维护其他几个路由表
-            this.onChannelDestroy(next.getKey(), next.getValue().getChannel());
-        }
-    }
-}
-```
-当过期后，NameServer将Broker从brokerLiveTable剔除，并关闭了通信通道，其他路由表的维护则依赖onChannelDestroy方法。
-```java
-/**
- * 移除topicQueueTable brokerAddrTable clusterAddrTable中关于制定Broker的路由信息
- *
- * @param remoteAddr Broker的地址
- * @param channel 通信通道
- */
-public void onChannelDestroy(String remoteAddr, Channel channel) {
-    String brokerAddrFound = null;
-    // 该方法不仅仅是在清理路由表的信息的时候调用，NameServer在定期检查长连接的时候也会去调用
-    // 所以下面的这个if代码块是在定期检查长连接的时候用到
-    if (channel != null) {
-        try {
-            try {
-                this.lock.readLock().lockInterruptibly();
-                Iterator<Entry<String, BrokerLiveInfo>> itBrokerLiveTable =
-                        this.brokerLiveTable.entrySet().iterator();
-                while (itBrokerLiveTable.hasNext()) {
-                    Entry<String, BrokerLiveInfo> entry = itBrokerLiveTable.next();
-                    if (entry.getValue().getChannel() == channel) {
-                        brokerAddrFound = entry.getKey();
-                        break;
-                    }
-                }
-            } finally {
-                this.lock.readLock().unlock();
-            }
-        } catch (Exception e) {
-            log.error("onChannelDestroy Exception", e);
-        }
-    }
-
-    // 如果brokerAddrFound为null，那么说明brokerLiveTable已经不存在指定的Broker信息了
-    if (null == brokerAddrFound) {
-        brokerAddrFound = remoteAddr;
-    } else {
-        log.info("the broker's channel destroyed, {}, clean it's data structure at once", brokerAddrFound);
-    }
-
-    if (brokerAddrFound != null && brokerAddrFound.length() > 0) {
-
-        try {
-            try {
-                // 正式清理路由表信息
-                // 第一步：获取写锁，防止并发异常
-                this.lock.writeLock().lockInterruptibly();
-                // 第二步：根据brokerAddr，移除路由表brokerLiveTable和filterServerTable中指定的Broker信息
-                this.brokerLiveTable.remove(brokerAddrFound);
-                this.filterServerTable.remove(brokerAddrFound);
-                String brokerNameFound = null;
-                boolean removeBrokerName = false;
-                // 第三步：开始清理brokerAddrTable中关于指定brokerAddr的信息
-                // 如果brokerName对应的BrokerData中没有Broker的信息，也就是BrokerData中的Map的brokerAddrs
-                // 为空，那么也要移除该brokerName对应的信息
-                Iterator<Entry<String, BrokerData>> itBrokerAddrTable =
-                        this.brokerAddrTable.entrySet().iterator();
-                while (itBrokerAddrTable.hasNext() && (null == brokerNameFound)) {
-                    BrokerData brokerData = itBrokerAddrTable.next().getValue();
-
-                    Iterator<Entry<Long, String>> it = brokerData.getBrokerAddrs().entrySet().iterator();
-                    while (it.hasNext()) {
-                        Entry<Long, String> entry = it.next();
-                        Long brokerId = entry.getKey();
-                        String brokerAddr = entry.getValue();
-                        if (brokerAddr.equals(brokerAddrFound)) {
-                            brokerNameFound = brokerData.getBrokerName();
-                            it.remove();
-                            log.info("remove brokerAddr[{}, {}] from brokerAddrTable, because channel destroyed",
-                                    brokerId, brokerAddr);
-                            break;
-                        }
-                    }
-
-                    if (brokerData.getBrokerAddrs().isEmpty()) {
-                        removeBrokerName = true;
-                        itBrokerAddrTable.remove();
-                        log.info("remove brokerName[{}] from brokerAddrTable, because channel destroyed",
-                                brokerData.getBrokerName());
-                    }
-                }
-                
-                // 第四步：清理clusterAddrTable中的brokerName信息，如果brokerName对应的没有存活的broker信息
-                // 那么就需要在clusterAddrTable移除brokerName的信息
-                if (brokerNameFound != null && removeBrokerName) {
-                    Iterator<Entry<String, Set<String>>> it = this.clusterAddrTable.entrySet().iterator();
-                    while (it.hasNext()) {
-                        Entry<String, Set<String>> entry = it.next();
-                        String clusterName = entry.getKey();
-                        Set<String> brokerNames = entry.getValue();
-                        boolean removed = brokerNames.remove(brokerNameFound);
-                        if (removed) {
-                            log.info(
-                                    "remove brokerName[{}], clusterName[{}] from clusterAddrTable, because "
-                                            + "channel destroyed",
-                                    brokerNameFound, clusterName);
-
-                            if (brokerNames.isEmpty()) {
-                                log.info(
-                                        "remove the clusterName[{}] from clusterAddrTable, because channel "
-                                                + "destroyed and no broker in this cluster",
-                                        clusterName);
-                                it.remove();
-                            }
-
-                            break;
-                        }
-                    }
-                }
-
-                // 第五步：清理topicQueueTable中对应的QueueData信息，如果brokerName对应的
-                // broker都已经被移除，那么就需要清理对应的Queue的信息
-                if (removeBrokerName) {
-                    Iterator<Entry<String, List<QueueData>>> itTopicQueueTable =
-                            this.topicQueueTable.entrySet().iterator();
-                    while (itTopicQueueTable.hasNext()) {
-                        Entry<String, List<QueueData>> entry = itTopicQueueTable.next();
-                        String topic = entry.getKey();
-                        List<QueueData> queueDataList = entry.getValue();
-
-                        Iterator<QueueData> itQueueData = queueDataList.iterator();
-                        while (itQueueData.hasNext()) {
-                            QueueData queueData = itQueueData.next();
-                            if (queueData.getBrokerName().equals(brokerNameFound)) {
-                                itQueueData.remove();
-                                log.info("remove topic[{} {}], from topicQueueTable, because channel destroyed",
-                                        topic, queueData);
-                            }
-                        }
-
-                        if (queueDataList.isEmpty()) {
-                            itTopicQueueTable.remove();
-                            log.info("remove topic[{}] all queue, from topicQueueTable, because channel destroyed",
-                                    topic);
-                        }
-                    }
-                }
-            } finally {
-                // 第六步：必须释放锁资源
-                this.lock.writeLock().unlock();
-            }
-        } catch (Exception e) {
-            log.error("onChannelDestroy Exception", e);
-        }
-    }
-}
-```
-从上面的代码看来逻辑思路还是非常简单明了的，NameServer的设计初衷就是为了让系统更加简单。
-
-**从主动注销的角度来分析：**
-在Broker正常启动的时候会注册一个shutDown的钩子函数，代码如下所示：
-```java
-// Broker在启动的时候会注册一个钩子函数，当Broker的进程收到退出进程的信号后会指定该函数
-// 主要是执行controller.shutdown();来关闭资源链接已经清理NameServer中的路由信息等
-Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            private volatile boolean hasShutdown = false;
-            private final AtomicInteger shutdownTimes = new AtomicInteger(0);
-
-            @Override
-            public void run() {
-                synchronized (this) {
-                    log.info("Shutdown hook was invoked, {}", this.shutdownTimes.incrementAndGet());
-                    if (!this.hasShutdown) {
-                        this.hasShutdown = true;
-                        long beginTime = System.currentTimeMillis();
-                        controller.shutdown();
-                        long consumingTimeTotal = System.currentTimeMillis() - beginTime;
-                        log.info("Shutdown hook over, consuming total time(ms): {}", consumingTimeTotal);
-                    }
-                }
-            }
-        }, "ShutdownHook"));
-```
-`controller.shutdown();`中会执行`this.unregisterBrokerAll();`方法，主要是去主动注销NameServer中的路由信息，底层调用的还是`brokerOuterAPI.unregisterBrokerAll`的方法：
-```java
-/**
- * 注销NameServer中的路由信息
- *
- * @param clusterName 集群名称
- * @param brokerAddr broker地址
- * @param brokerName broker名称
- * @param brokerId broker ID
- */
-public void unregisterBrokerAll(
-        final String clusterName,
-        final String brokerAddr,
-        final String brokerName,
-        final long brokerId
-) {
-    // 获取所有的NameServer列表
-    List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
-    if (nameServerAddressList != null) {
-        // 遍历NameServer列表并分别注销
-        for (String namesrvAddr : nameServerAddressList) {
-            try {
-                this.unregisterBroker(namesrvAddr, clusterName, brokerAddr, brokerName, brokerId);
-                log.info("unregisterBroker OK, NamesrvAddr: {}", namesrvAddr);
-            } catch (Exception e) {
-                log.warn("unregisterBroker Exception, {}", namesrvAddr, e);
-            }
-        }
-    }
-}
-```
-具体的注销逻辑和注册逻辑是类似的，首先构建请求头，将必要信息进行封装，然后根据请求码来获取连接，然后执行连接获取执行结果，具体代码如下所示：
-```java
-public void unregisterBroker(
-        final String namesrvAddr,
-        final String clusterName,
-        final String brokerAddr,
-        final String brokerName,
-        final long brokerId
-) throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException,
-        MQBrokerException {
-    // 第一步：封装注销Broker的请求头
-    UnRegisterBrokerRequestHeader requestHeader = new UnRegisterBrokerRequestHeader();
-    requestHeader.setBrokerAddr(brokerAddr);
-    requestHeader.setBrokerId(brokerId);
-    requestHeader.setBrokerName(brokerName);
-    requestHeader.setClusterName(clusterName);
-    // 第二步：根据请求码来获取连接
-    RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UNREGISTER_BROKER, requestHeader);
-
-    // 第三步：执行连接请求
-    RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, 3000);
-    assert response != null;
-    // 第四步：分析结果
-    switch (response.getCode()) {
-        case ResponseCode.SUCCESS: {
-            return;
-        }
-        default:
-            break;
-    }
-
-    throw new MQBrokerException(response.getCode(), response.getRemark());
-}
-```
-这是Broker端主动注销的源码分析，当NameServer接收到注销请求后，会由NameServer的DefaultRequestProcessor根据请求码转发给RouteInfoManager的unregisterBroker方法来进行路由的删除维护操作，就和NameServer定期扫描的在底层使用的方法是一致的了。
-
-### 3.4 路由信息发现
-
-NameServer在设计之初就考虑将其设计得更加简单，NameServer中的路由信息在发生变化后，并不会主动推送给客户端（包括生产者和消费者），而是需要客户端主动拉取最新的路由信息。具体的请求码是`RequestCode.GET_ROUTEINFO_BY_TOPIC`，请求到达NameServer的DefaultRequestProcessor后，将转发给getRouteInfoByTopic方法来执行，具体的源码如下所示：
-```java
-/**
- * 根据Topic来获取路由信息
- *
- * @param ctx 上下文环境
- * @param request 请求内容
- * @return RemotingCommand对象
- * @throws RemotingCommandException 异常
- */
-public RemotingCommand getRouteInfoByTopic(ChannelHandlerContext ctx,
-        RemotingCommand request) throws RemotingCommandException {
-    // 封装返回体和解析请求头
-    final RemotingCommand response = RemotingCommand.createResponseCommand(null);
-    final GetRouteInfoRequestHeader requestHeader =
-            (GetRouteInfoRequestHeader) request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
-
-    // 从RouteInfoManager中获取路由信息，并封装为TopicRouteData对象
-    TopicRouteData topicRouteData =
-            this.namesrvController.getRouteInfoManager().pickupTopicRouteData(requestHeader.getTopic());
-
-    if (topicRouteData != null) {
-        // 如果路由信息存在，且该主题配置的是顺序消息，那么就从NameServer的KVconfig中获取顺序消息相关的配置
-        if (this.namesrvController.getNamesrvConfig().isOrderMessageEnable()) {
-            String orderTopicConf =
-                    this.namesrvController.getKvConfigManager()
-                            .getKVConfig(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG,
-                                    requestHeader.getTopic());
-            topicRouteData.setOrderTopicConf(orderTopicConf);
-        }
-
-        // 返回体编码并返回
-        byte[] content = topicRouteData.encode();
-        response.setBody(content);
-        response.setCode(ResponseCode.SUCCESS);
-        response.setRemark(null);
-        return response;
-    }
-
-    // 在未找到路由信息的情况下返回如下信息
-    response.setCode(ResponseCode.TOPIC_NOT_EXIST);
-    response.setRemark("No topic route info in name server for the topic: " + requestHeader.getTopic()
-            + FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL));
-    return response;
-}
-```
-以上代码中主要的一行代码是：
-```java
-// 从RouteInfoManager中获取路由信息，并封装为TopicRouteData对象
-TopicRouteData topicRouteData =
-       this.namesrvController.getRouteInfoManager().pickupTopicRouteData(requestHeader.getTopic());
-```
-底层还是需要从RouteInfoManager获取路由表信息，最后将其封装为TopicRouteData返回给客户端。由于`pickupTopicRouteData`方法简单明了，读者可自行阅读并理解。
-
-## 四、文章小结
-
-本文从NameServer的启动流程开始分析，一步一步分析到本文的主要内容——路由管理器（RouteInfoManager），主要围绕路由信息的注册、剔除与发现，一步步分析后，我们发现原理其实很简单，RocketMQ就是这么喜人，性能强大的同时，让所有喜欢源码的朋友都能阅读得懂。总结来说就是：
-
-- Broker在启动的时候向指定的NameServer进行注册，发送自身的元信息到NameServer的路由管理器；
-- 路由信息的剔除则有主动注销和异常剔除两种情况，都是将路由信息从路由管理器中删除，NameServer端的底层处理方式都是一致的，只是触发的方式不一样而已，前者是NameServer主动扫描，后者是Broker主动发送注销请求；
-- 获取路由信息则由客户端主动拉取，NameServer并不会主动推送。
-
-思考：如果某个Broker发生了故障，并没有主动发起注销的请求，那么NameServer最少要等待2min才会得知并进行故障剔除，在这期间，生产者将消息发送到故障的Broker，那么就会造成发送失败，其实这是分布式系统中常见的高可用问题，那么RocketMQ是如何解决这种问题的呢？我们可以带着这个问题进入到下一节的源码分析《[RocketMQ源码之路（三）消息发送源码分析](https://itlemon.blog.csdn.net/article/details/113879541)》，欢迎来撩。
+上述代码都给出了详细的注释说明，每个步骤对应的代码内部也基本给出了注释说明，读者可以根据需要去阅读我注释后的 [源代码](https://github.com/itlemon/rocketmq-5.0.0) 。
 
 了解更多干货，欢迎关注我的微信公众号：爪哇论剑（微信号：itlemon）
 ![微信公众号-爪哇论剑-itlemon](https://img-blog.csdnimg.cn/20190917130526135.jpeg)
