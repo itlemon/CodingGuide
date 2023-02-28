@@ -5,11 +5,11 @@ import {pwaPlugin} from '@vuepress/plugin-pwa'
 import {pwaPopupPlugin} from '@vuepress/plugin-pwa-popup'
 import {gitPlugin} from '@vuepress/plugin-git'
 import {searchPlugin} from '@vuepress/plugin-search'
-import {copyCodePlugin} from "vuepress-plugin-copy-code2"
+import {copyCodePlugin} from 'vuepress-plugin-copy-code2'
 import {commentPlugin} from 'vuepress-plugin-comment2'
-import {seoPlugin} from "vuepress-plugin-seo2"
+import {seoPlugin} from 'vuepress-plugin-seo2'
 import {svgIconPlugin} from '@goy/vuepress-plugin-svg-icons'
-import {mdEnhancePlugin} from "vuepress-plugin-md-enhance"
+import {mdEnhancePlugin} from 'vuepress-plugin-md-enhance'
 
 import {head, navbarZh, sidebarZh,} from './configs'
 
