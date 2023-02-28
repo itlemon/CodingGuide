@@ -449,5 +449,11 @@ public boolean initialize() {
 ```
 上述代码都给出了详细的注释说明，每个步骤对应的代码内部也基本给出了注释说明，读者可以根据需要去阅读我注释后的 [源代码](https://github.com/itlemon/rocketmq-5.0.0) 。
 
+## 三、文章小结
+
+本文主要讲解的是 NameServer 的启动流程，在启动过程中，首先是解析各种配置，并将配置装配到配置类对象中，这些配置类对象，其实都是有默认值的，正常情况下，不需要用户去自定义这些配置，如果有需要，也可以针对各个配置项去单独配置到配置文件中。配置解析完毕之后，就是开始创建 NameServerController 对象，创建的过程中，其实就是去创建了 KVConfigManager、BrokerHousekeepingService、RouteInfoManager、Configuration 对象，这些组件都是重要组件，NameServer 的主要功能都依靠它们，对象创建完毕后就是初始化必要的线程池、处理器等，待所有必备组件都初始化好了以后，就是启动 NettyServer 了，整个 NameServer 也就启动起来了。
+
+本文并没有对 Netty 进行深入讲解，Netty 不仅仅扮演着 RocketMQ 底层的网络交互组件，它同样也是很多重要 RPC 服务的基础网络组件，感兴趣的读者可以深入去学习和了解 Netty，本系列文章将不着重讲解 Netty，后续将通过发 Netty 系列文章来讲。
+
 了解更多干货，欢迎关注我的微信公众号：爪哇论剑（微信号：itlemon）
 ![微信公众号-爪哇论剑-itlemon](https://img-blog.csdnimg.cn/20190917130526135.jpeg)
