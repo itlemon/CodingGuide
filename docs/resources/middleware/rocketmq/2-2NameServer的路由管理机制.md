@@ -2,55 +2,66 @@
 
 ![image-20230214233259510](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230214233259510.png)
 
-## 三、NameServer的路由原理
+> 生产者在生产消息、消费者在消费消息之前，都需要连接到 NameServer 上，从 NameServer 拉取路由信息，从而实现消息的生产、存储与消费。为生产者和消费者提供路由信息，是 NameServer 的主要功能之一，NameServer 内部由一个路由管理器维护着路由信息，并且可以动态地管理 Broker 节点信息，包含注册、剔除、发现及心跳等。本文将着重介绍 NameServer 的路由管理机制，文章中使用到的代码均来自 RocketMQ 5.0 版本，感兴趣的读者可以 clone 下来阅读源码与注释。文中的代码仓库地址：[点击跳转](https://github.com/itlemon/rocketmq-5.0.0)。
 
-文章一开始就提到，NameServer是保证消息正确地从生产者到消费者的“指挥官”，它提供了路由管理，服务注册与服务发现、故障剔除等机制，这些机制的背后原理都都依赖于NameServer的路由，本小节将着重介绍NameServer的路由原理。
+## 一、路由信息数据结构分析
 
-### 3.1 路由信息管理器
+NameServer 是保证消息正确地从生产者到消费者的“指挥官”，它提供了路由管理，服务注册与服务发现、故障剔除等机制，这些机制的背后原理都都依赖于 NameServer 的路由功能，接下来，将详细介绍路由信息的数据结构，并按照 2m-2s 部署方式部署两组 Broker，通过打断点的形式一起看看 Broker 数据在路由管理器中是如何存储的，方便大家理解 NameServer 的路由原理。
 
-NameServer有一个路由信息管理器`RouteInfoManager`，它位于`org.apache.rocketmq.namesrv.routeinfo`包内，其内部存储了topic与broker的各种信息与关系，是RocketMQ实现服务注册与发现、故障剔除的基础。
-RouteInfoManager内部维护了多个HashMap数据结构，用于存储路由信息，具体的内容如下所示：
+### 1.1 路由信息管理器
+
+NameServer 有一个路由信息管理器 `RouteInfoManager`，它位于 `org.apache.rocketmq.namesrv.routeinfo` 包内，其内部存储了 topic 与 broker 的各种信息与关系，是 NameServer 实现服务注册与发现、故障剔除的基础。RouteInfoManager 内部维护了多个 Map 数据结构，用于存储路由信息，具体的内容如下所示：
 
 ```java
 /**
- * 该Map存储的是Topic消息队列的路由信息，发送具体消息时可根据该Map来进行负载均衡
+ * 该容器存储的是topic与该topic相关的broker的Queue的数据
+ * 例如某个RocketMQ集群是按照2m-2s部署的，那么这个集群上所有的topic，它对应的Map<String, QueueData>，在集群正常的情况下，
+ * 都将有两条数据，键分别是broker-a、broker-b，QueueData记录topic在broker上的分区数等信息
  */
-private final HashMap<String/* topic */, List<QueueData>> topicQueueTable;
+private final Map<String/* topic */, Map<String/* brokerName */, QueueData>> topicQueueTable;
 
 /**
- * Broker的基础信息表，键名是Broker的名称，BrokerData中存储了Broker的名称，
- * 所属集群名称以及主Broker和备Broker的地址信息
+ * 该容器存储的是每个brokerName与broker的关系，例如某个RocketMQ集群是按照2m-2s部署的，那么有两组broker，brokerName分别
+ * 是：broker-a、broker-b，这两组broker各有一个主和从，主的ID是0，从的ID是1，那么BrokerData里将记录集群名、主从broker实例
+ * 的地址，zone名称等
  */
-private final HashMap<String/* brokerName */, BrokerData> brokerAddrTable;
+private final Map<String/* brokerName */, BrokerData> brokerAddrTable;
 
 /**
- * 集群与Broker名称的映射表，可以方便知道一个集群下有哪些Broker
+ * 该容器存储的是集群名与brokerName的关系，也就是集群与Broker名称的映射表，可以方便知道一个集群下有哪些Broker
  */
-private final HashMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
+private final Map<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
 
 /**
- * 该Map存储的是每个Broker的存活信息，Name Server每次收到心跳后会将此引用指向最新的表
+ * 该容器存储的是每个broker实例的存活信息，NameServer每次收到心跳后会将此引用指向最新的表
  */
-private final HashMap<String/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
+private final Map<BrokerAddrInfo/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
 
 /**
- * 该Map存储的是Broker与Filter Server之间的关系表
+ * 该容器存储的是Broker与Filter Server之间的关系
  */
-private final HashMap<String/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
+private final Map<BrokerAddrInfo/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
+
+/**
+ * 该容器存储的是topic与该topic相关的broker中的Queue的映射信息
+ */
+private final Map<String/* topic */, Map<String/*brokerName*/, TopicQueueMappingInfo>> topicQueueMappingInfoTable;
 ```
 
-从上面的数据结构看来，维护NameServer的路由信息应该还是很简单的，没有太过于抽象的概念，从数据结构中也能得出以下几个结论：
+从上面的数据结构看来，维护 NameServer 的路由信息应该还是很简单的，没有太过于抽象的概念，从数据结构中可以分析出来如下内容：
 
-- 一个Topic包含多个消息队列，其数据是存储在`topicQueueTable`中。
-- 多个Broker拥有同一个Broker Name，它们之间使用BrokerId来进行区分，在BrokerData内部维护了一个HashMap结构来存储。
-- 一个RocketMQ集群可包含多个名称唯一的Broker。
-- 一个Broker可与多个Filter Server进行绑定。
+- 一个 Topic 包含多少个队列（Queue，有时候也成为分区，Partition），这个是和部署了多少组 Broker （主从算一组）有关，例如本文的案例部署方式是 2m-2s，就是两组 Broker，那么一个 Topic 拥有的分区数一定是 $2$ 的整数倍，一个 Broker 默认为每一个 Topic 创建 $4$ 个读队列和 $4$ 个写队列，Topic 的分区信息是存储在 `topicQueueTable` 中。
+- 一组 Broker 有一个主，可以有多个从，它们拥有同样的 BrokerName，主从之间使用 brokerId 来进行区分，`brokerId=0` 代表主节点，`brokerId>0` 表示从节点，`brokerAddrTable` 维护了 BrokerName 对应的一组 Broker 集群信息，在 BrokerData 内部维护了一个 HashMap 结构来存储主从 Broker 节点，键是 brokerId，值是 Broker 节点的 IP 地址及端口信息。
+- `clusterAddrTable` 维护了群名与 BrokerName 的关系，也就是集群与 Broker 名称的映射表，可以方便知道一个集群下有哪些 Broker。
+- `brokerLiveTable` 存储的是每个 Broker 实例的存活信息，NameServer 每次收到心跳后会将此引用指向最新的表，该数据结构用来维护 Broker 的存活信息。
+- `filterServerTable` 是 Broker 与 Filter Server 之间的关系。
+- `topicQueueMappingInfoTable` 存储的是 Topic 与该 Topic 相关的 Broker 中的 Queue 的映射信息。
 
-其中QueueData、BrokerData、BrokerLiveInfo分别用于存储队列信息、Broker信息及Broker存活信息等数据，其类图如下所示：
+其中 QueueData、BrokerData、BrokerLiveInfo、TopicQueueMappingInfo 分别用于存储队列信息、Broker 信息、Broker 存活信息以及 Topic 与 Queue 映射信息等数据，其类图如下所示：
 
 ```mermaid
 classDiagram
-    class QueueData{
+  class QueueData{
 	    -String brokerName
 	    -int readQueueNums
 	    -int writeQueueNums
@@ -60,42 +71,46 @@ classDiagram
 	class BrokerData{
 	    -String cluster
 	    -String brokerName
-	    -int writeQueueNums
 	    -HashMap brokerAddrs
+	    -String zoneName
 	}
 	class BrokerLiveInfo{
 	    -long lastUpdateTimestamp
+	    -long heartbeatTimeoutMillis
 	    -DataVersion dataVersion
 	    -Channel channel
 	    -String haServerAddr
 	}
 ```
 
-QueueData中各个属性含义如下所示：
+QueueData 中各个属性含义如下所示：
 
-- brokerName：当前Queue所属的Broker的名称
-- readQueueNums：读Queue的数量
-- writeQueueNums：写Queue的数量
+- brokerName：当前 Queue 所属的 Broker 的名称
+- readQueueNums：读 Queue 的数量
+- writeQueueNums：写 Queue 的数量
 - perm：读写权限，{@link org.apache.rocketmq.common.constant.PermName}
-- topicSynFlag：topic同步标记，{@link org.apache.rocketmq.common.sysflag.TopicSysFlag}
+- topicSynFlag：Topic 同步标记，{@link org.apache.rocketmq.common.sysflag.TopicSysFlag}
 
-BrokerData中各个属性含义如下所示：
+BrokerData 中各个属性含义如下所示：
 
 - cluster：所属集群名称
-- brokerName：Broker名称
-- brokerAddrs：主备Broker信息表，键为BrokerID，值为Broker的地址
+- brokerName：Broker 名称
+- brokerAddrs：主备 Broker 信息表，键为 BrokerID，值为 Broker 的地址
+- zoneName：RocketMQ 5.0 新特性，支持多 zone 部署
 
-BrokerLiveInfo中各个属性含义如下所示：
+BrokerLiveInfo 中各个属性含义如下所示：
 
-- lastUpdateTimestamp：上一次更新的时间戳，用于判断该Broker是否已经过期
-- dataVersion：Broker信息版本
-- channel：socket通道
-- haServerAddr：haServer的地址，是Slave从Master拉取数据时链接的地址
+- lastUpdateTimestamp：上一次更新的时间戳，用于判断该 Broker 是否已经过期，默认的 Broker 心跳过期时间是 $2$ 分钟
+- heartbeatTimeoutMillis：心跳超时时间，默认是 $2$ 分钟，如果上一次更新时间戳加上心跳超时时间小于当前时间戳，那么说明该 Broker 过期了，需要被剔除。
+- dataVersion：Broker 信息版本，记录 Broker 的状态
+- channel：Socket 通道
+- haServerAddr：haServer 的地址，是 Slave 从 Master 拉取数据时链接的地址
 
-本文开始的第一张图是一个2主2从的RocketMQ集群部署方式，集群中包含2个Master的Broker和2个Slave的Broker，使用BrokerData存储上述部署方式，其表现为以下形式：
+文章 [NameServer的启动原理](./2-1NameServer的启动原理.md) 第一张图是一个 $2$ 主 $2$ 从的集群部署方式，集群中包含 $2$ 个 Master 的 Broker 和 $2$ 个 Slave 的 Broker，使用 BrokerData 存储上述部署方式，其表现为以下形式：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213185641205.png)
-我们启动一个NameServer服务，并且启动四个Broker服务（分别是BrokerStartup-am、BrokerStartup-as、BrokerStartup-bm、BrokerStartup-bs），按照上面的图展示的方式来进行部署，一起验证一下RouteInfoManager内部的数据存储的内容。
-在本机IntelliJ IDEA中启动四个Broker，需要为四个Broker分别设置配置文件，我们参考《[RocketMQ源码之路（一）搭建RocketMQ源码环境](1-1RocketMQ源码阅读环境搭建.md)》中，参考Broker的配置方式，分别配置四份，具体的配置文件参考代码中的[配置文件](https://github.com/itlemon/itlemon-rocketmq/tree/master/rocketmq_home)，IntelliJ IDEA中的配置面板需要改成如下所示：
+我们启动一个 NameServer 服务，并且启动四个 Broker 服务（分别是 BrokerStartup-am、BrokerStartup-as、BrokerStartup-bm、BrokerStartup-bs ），按照上面的图展示的方式来进行部署，一起验证一下 RouteInfoManager 内部的数据存储的内容。
+
+在本机 IntelliJ IDEA 中启动四个 Broker 实例，需要为四个 Broker 实例分别设置配置文件，我们参考《[RocketMQ源码之路（一）搭建RocketMQ源码环境](1-1RocketMQ源码阅读环境搭建.md)》中，参考Broker的配置方式，分别配置四份，具体的配置文件参考代码中的[配置文件](https://github.com/itlemon/itlemon-rocketmq/tree/master/rocketmq_home)，IntelliJ IDEA中的配置面板需要改成如下所示：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213215432215.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
 图中展示红框是设置了一个自定义的命令行参数，支持Broker自定义启动端口（默认是10911，需要在同一机器启动多个Broker服务，最好支持自定义端口设置），这需要修改一下`BrokerStartup`这个类的源码，具体可参考上面BrokerStartup的自定义启动端口的代码，这里给出[github地址](https://github.com/itlemon/itlemon-rocketmq/blob/master/broker/src/main/java/org/apache/rocketmq/broker/BrokerStartup.java)，不再在文章中重复赘述了。需要注意的一点是，如果设置的broker-am的启动端口是10911，那么broker-as的不能设置为10912，因为每个每个broker启动后还会占用启动端口的后一个端口。
 我们继续按照顺序分别启动四个Broker服务，最后启动的broker-bs，并且给NameServer的RouteInfoManager中的registerBroker方法加上断点，因为Broker向NameServer发送心跳的时候会调用这个方法来维护路由表，加上断点后可以很方便地查看运行时数据。
