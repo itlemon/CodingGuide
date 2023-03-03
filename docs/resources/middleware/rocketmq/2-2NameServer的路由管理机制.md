@@ -4,11 +4,11 @@
 
 > 生产者在生产消息、消费者在消费消息之前，都需要连接到 NameServer 上，从 NameServer 拉取路由信息，从而实现消息的生产、存储与消费。为生产者和消费者提供路由信息，是 NameServer 的主要功能之一，NameServer 内部由一个路由管理器维护着路由信息，并且可以动态地管理 Broker 节点信息，包含注册、剔除、发现及心跳等。本文将着重介绍 NameServer 的路由管理机制，文章中使用到的代码均来自 RocketMQ 5.0 版本，感兴趣的读者可以 clone 下来阅读源码与注释。文中的代码仓库地址：[点击跳转](https://github.com/itlemon/rocketmq-5.0.0)。
 
-## 一、路由信息数据结构分析
+## 一、路由信息数据结构原理
 
 NameServer 是保证消息正确地从生产者到消费者的“指挥官”，它提供了路由管理，服务注册与服务发现、故障剔除等机制，这些机制的背后原理都都依赖于 NameServer 的路由功能，接下来，将详细介绍路由信息的数据结构，并按照 2m-2s 部署方式部署两组 Broker，通过打断点的形式一起看看 Broker 数据在路由管理器中是如何存储的，方便大家理解 NameServer 的路由原理。
 
-### 1.1 路由信息管理器
+### 1.1 路由信息数据结构分析
 
 NameServer 有一个路由信息管理器 `RouteInfoManager`，它位于 `org.apache.rocketmq.namesrv.routeinfo` 包内，其内部存储了 topic 与 broker 的各种信息与关系，是 NameServer 实现服务注册与发现、故障剔除的基础。RouteInfoManager 内部维护了多个 Map 数据结构，用于存储路由信息，具体的内容如下所示：
 
@@ -106,14 +106,67 @@ BrokerLiveInfo 中各个属性含义如下所示：
 - channel：Socket 通道
 - haServerAddr：haServer 的地址，是 Slave 从 Master 拉取数据时链接的地址
 
-文章 [NameServer的启动原理](./2-1NameServer的启动原理.md) 第一张图是一个 $2$ 主 $2$ 从的集群部署方式，集群中包含 $2$ 个 Master 的 Broker 和 $2$ 个 Slave 的 Broker，使用 BrokerData 存储上述部署方式，其表现为以下形式：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213185641205.png)
-我们启动一个 NameServer 服务，并且启动四个 Broker 服务（分别是 BrokerStartup-am、BrokerStartup-as、BrokerStartup-bm、BrokerStartup-bs ），按照上面的图展示的方式来进行部署，一起验证一下 RouteInfoManager 内部的数据存储的内容。
+### 1.2 路由信息真实存储状况
 
-在本机 IntelliJ IDEA 中启动四个 Broker 实例，需要为四个 Broker 实例分别设置配置文件，我们参考《[RocketMQ源码之路（一）搭建RocketMQ源码环境](1-1RocketMQ源码阅读环境搭建.md)》中，参考Broker的配置方式，分别配置四份，具体的配置文件参考代码中的[配置文件](https://github.com/itlemon/itlemon-rocketmq/tree/master/rocketmq_home)，IntelliJ IDEA中的配置面板需要改成如下所示：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213215432215.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
-图中展示红框是设置了一个自定义的命令行参数，支持Broker自定义启动端口（默认是10911，需要在同一机器启动多个Broker服务，最好支持自定义端口设置），这需要修改一下`BrokerStartup`这个类的源码，具体可参考上面BrokerStartup的自定义启动端口的代码，这里给出[github地址](https://github.com/itlemon/itlemon-rocketmq/blob/master/broker/src/main/java/org/apache/rocketmq/broker/BrokerStartup.java)，不再在文章中重复赘述了。需要注意的一点是，如果设置的broker-am的启动端口是10911，那么broker-as的不能设置为10912，因为每个每个broker启动后还会占用启动端口的后一个端口。
-我们继续按照顺序分别启动四个Broker服务，最后启动的broker-bs，并且给NameServer的RouteInfoManager中的registerBroker方法加上断点，因为Broker向NameServer发送心跳的时候会调用这个方法来维护路由表，加上断点后可以很方便地查看运行时数据。
+文章《[NameServer的启动原理](./2-1NameServer的启动原理.md)》第一张图是一个 $2$ 主 $2$ 从的集群部署方式，集群中包含 $2$ 个 Master 的 Broker 和 $2$ 个 Slave 的 Broker，使用 BrokerData 存储上述部署方式，其表现为以下形式：
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213185641205.png)
+我们启动一个 NameServer 服务，并且启动四个 Broker 服务（分别是 BrokerStartup-am、BrokerStartup-as、BrokerStartup-bm、BrokerStartup-bs )，按照上面的图展示的方式来进行部署，一起验证一下 RouteInfoManager 内部的数据存储的内容。
+
+为了可以在本机 IntelliJ IDEA 中启动四个 Broker 实例，我们需要为这四个 Broker 实例设置独立的 `ROCKETMQ_HOME`，一般企业生产环境，各个 Broker 基本独立部署在独立的物理机中，真实生产环境， `ROCKETMQ_HOME` 可以是一样的，但是本篇文章的验证案例，是需要在同一台机器上部署，所以各个 Broker 实例的 `ROCKETMQ_HOME` 要设置为不一样的。另外，Broker 默认的监听端口是 $10911$，我们也需要稍微改造一下 Broker 的启动代码，将其改造成支持在命令参数中配置监听端口，这样的话，可以在启动 Broker 的时候设置监听的端口，防止各个 Broker 因端口占用而无法启动。
+
+- 对于各个 Broker 独立的 `ROCKETMQ_HOME`，我们可以在之前配置的目录下新建四个目录 broker-am、broker-as、broker-bm、broker-bs，作为四个 Broker 实例的 `ROCKETMQ_HOME`，再在每个目录下新建 conf 目录用于存储 Broker 配置文件，新建 logs 目录用于存放日志，新建 store 目录用于存储 Broker 数据。笔者已按照上图的配置方式配置四个配置文件，这四个配置文件我已经放在 [Github](https://github.com/itlemon/rocketmq-5.0.0/tree/master/distribution/conf/custom) 上，读者可以拷贝下来，修改一下 `ROCKETMQ_HOME` 路径即可使用。
+
+- 对于支持在命令行中设置自定义监听端口，我们可以仿照文章《[NameServer的启动原理](./2-1NameServer的启动原理.md)》中对 NameServer 自定义端口的改造，来完成对 Broker 的改造，从而支持从命令行中通过`-l`或者`--listenPort`来指定端口，这里直接贴出代码。
+
+  :::: code-group
+  ::: code-group-item 改造代码1
+
+  ```java{11-14}
+  // 这里改造的是org.apache.rocketmq.broker.BrokerStartup#buildCommandlineOptions方法
+  public static Options buildCommandlineOptions(final Options options) {
+      Option opt = new Option("c", "configFile", true, "Name server config properties file");
+      opt.setRequired(false);
+      options.addOption(opt);
+  
+      opt = new Option("p", "printConfigItem", false, "Print all config items");
+      opt.setRequired(false);
+      options.addOption(opt);
+  
+      // 这里额外加一个选项，支持配置自定义监听端口
+      opt = new Option("l", "listenPort", true, "Name server custom listening port");
+      opt.setRequired(false);
+      options.addOption(opt);
+      return options;
+  }
+  ```
+
+  :::
+  ::: code-group-item 改造代码2
+
+  ```java
+  // 这里改造的是org.apache.rocketmq.broker.BrokerStartup#createBrokerController方法
+  // 这里默认启动监听的端口是10911，其实可以在上面的命令行选项中加入一个自定义的选型，并设置一个端口选项
+  // 这样就可以在启动的时候通过命令行传入监听端口
+  String listenPort;
+  if (commandLine.hasOption('l') && (StringUtils.isNumeric(listenPort = commandLine.getOptionValue('l')))) {
+      nettyServerConfig.setListenPort(Integer.parseInt(listenPort));
+  } else {
+      nettyServerConfig.setListenPort(10911);
+  }
+  ```
+
+  :::
+  ::::
+
+到目前为止，我们四个 Broker 实例的配置文件、ROCKETMQ_HOME、自定义端口改造都已经完成，接下来在 IDEA 中配置启动面板，这里给出一个示例：
+
+![image-20230304015223935](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230304015223935.png)
+
+尤其要注意图中展示红框标记的地方，每个 Broker 要指向对应的配置文件，需要使用不同的端口，这里设置了一个自定义的命令行参数，支持 Broker 自定义启动端口（默认是 $10911$，需要在同一机器启动多个 Broker 服务，最好支持自定义端口设置），需要注意的一点是，如果设置的 broker-am 的启动端口是 $10911$，那么 broker-as 的不能设置为 $10912$，因为每个每个 Broker 启动后还会占用启动端口的后一个端口。笔者使用端口分别是 $10911$、$10921$、$10931$、$10941$，读者可以根据自己的想法设置即可。
+
+我们首先启动 NameServer，这里为了演示方便，启动一个 NameServer 即可，然后依次启动四个 Broker 服务，最后启动 broker-bs 的时候，给 NameServer 的 RouteInfoManager 中的 registerBroker 方法加上断点，因为 Broker 向 NameServer 发送心跳的时候会调用这个方法来维护路由表，加上断点后可以很方便地查看运行时数据。
+
+#### 1.2.1 topicQueueTable的数据状况
 
 - topicQueueTable：
   ![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213231041621.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
