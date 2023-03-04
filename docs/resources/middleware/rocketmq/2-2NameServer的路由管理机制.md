@@ -164,13 +164,39 @@ BrokerLiveInfo 中各个属性含义如下所示：
 
 尤其要注意图中展示红框标记的地方，每个 Broker 要指向对应的配置文件，需要使用不同的端口，这里设置了一个自定义的命令行参数，支持 Broker 自定义启动端口（默认是 $10911$，需要在同一机器启动多个 Broker 服务，最好支持自定义端口设置），需要注意的一点是，如果设置的 broker-am 的启动端口是 $10911$，那么 broker-as 的不能设置为 $10912$，因为每个每个 Broker 启动后还会占用启动端口的后一个端口。笔者使用端口分别是 $10911$、$10921$、$10931$、$10941$，读者可以根据自己的想法设置即可。
 
-我们首先启动 NameServer，这里为了演示方便，启动一个 NameServer 即可，然后依次启动四个 Broker 服务，最后启动 broker-bs 的时候，给 NameServer 的 RouteInfoManager 中的 registerBroker 方法加上断点，因为 Broker 向 NameServer 发送心跳的时候会调用这个方法来维护路由表，加上断点后可以很方便地查看运行时数据。
+我们首先启动 NameServer，这里为了演示方便，启动一个 NameServer 即可，然后依次启动四个 Broker 服务，最后在启动完 broker-bs 后，给 NameServer 的 RouteInfoManager 中的 registerBroker 方法加上断点，因为 Broker 向 NameServer 发送心跳的时候会调用这个方法来维护路由表，加上断点后可以很方便地查看运行时数据。
 
 #### 1.2.1 topicQueueTable的数据状况
 
 - topicQueueTable：
-  ![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213231041621.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
-  上图中topicQueueTable对应于运行时的数据就是：
+
+![image-20230305002712927](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230305002712927.png)
+
+这是在四个 Broker 实例启动后，向 NameServer 注册的 Topic 信息，这些 Topic 除了 testCluster、broker-a、broker-b 以外，其他的都是系统预定义的 Topic，例如 `RMQ_SYS_TRANS_OP_HALF_TOPIC` 用来存放半事务消息，`SCHEDULE_TOPIC_XXXX` 用来存放延时消息等等。
+
+上面有一个特殊 Topic：`TBW102`，我们在这里简单介绍一下它，后面在 Producer 发送消息的文章中还会提到它。它的作用很重要，当 Producer 在发送消息时，默认情况下，不需要提前创建好 Topic，如果 Topic 不存在，Broker 会自动创建 Topic。但是新创建的 Topic 它的权限是什么？读写队列数是多少呢？这个时候就需要用到 `TBW102` 了，RocketMQ会基于该 Topic 的配置创建新的 Topic。这里基本的时序图如下所示：
+
+```sequence
+DefaultMQProducer ->> DefaultMQProducer: 发送消息send(Topic, Message)
+DefaultMQProducer ->> NameServer: 第一次拉取TopicPublishInfo
+NameServer -->> DefaultMQProducer: Topic不存在
+DefaultMQProducer -> NameServer: 第二次拉取TopicPublishiInfo，<br/>此时拉取的是TBW102的路由信息
+NameServer -->> DefaultMQProducer: 返回TBW102的路由信息
+Note left of DefaultMQProducer: 1.Producer根据TBW102的路由信息构建TopicPublishInfo<br/>2.将TopicPublishInfo缓存到本地<br/>3.按照路由信息发送消息
+DefaultMQProducer -> SendMessageProcessor: 发送消息，并携带defaultTopic=TBW102
+SendMessageProcessor ->> SendMessageProcessor: 消息检查msgCheck()
+Note left of SendMessageProcessor: 消息校验：<br/>1.Topic合法性校验<br/>2.Topic不存在，自动创建
+SendMessageProcessor ->> TopicConfigManager: 创建Topic
+TopicConfigManager ->> TopicConfigManager: createTopicInSendMessageMethod()
+Note left of TopicConfigManger: 1.基于TBW102的配置创建Topic<br/>2.发送心跳信息给NameServer，携带上新的Topic信息完成注册
+DefaultMQProducer -> SendMessageProcessor: 后续再发送消息，Topic路由信息就已经有了
+```
+
+根据时序图，我们一起总结下流程：Producer 发送一个不存在的 Topic 消息时，首先会从 NameServer 拉取 Topic 的路由信息，第一次拉取必然失败，第二次会直接拉取 TBW102 的路由数据，基于它创建 TopicPublishInfo 并缓存到本地，进行正常的消息发送，在 Header 里将 defaultTopic 设置为 TBW102。Broker 接收到消息时，先对消息做见检查，检查到 Topic 不存在，会基于 defaultTopic 的配置去创建该 Topic，然后注册到 NameServer 上，这样一个全新的Topic就被自动创建了。
+
+我们理解了 Topic：TBW102 的作用，那么我们接下来就使用这个 Topic 来描述 NameServer 的路由信息。
+
+上图中 topicQueueTable 对应于运行时的数据就是：
 
 ```json
 {
