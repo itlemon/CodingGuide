@@ -188,7 +188,7 @@ SendMessageProcessor ->> SendMessageProcessor: 消息检查msgCheck()
 Note left of SendMessageProcessor: 消息校验：<br/>1.Topic合法性校验<br/>2.Topic不存在，自动创建
 SendMessageProcessor ->> TopicConfigManager: 创建Topic
 TopicConfigManager ->> TopicConfigManager: createTopicInSendMessageMethod()
-Note right of TopicConfigManager: 1.基于TBW102的配置创建Topic<br/>2.发送心跳信息给NameServer，携带上新的Topic信息完成注册
+Note left of TopicConfigManager: 1.基于TBW102的配置创建Topic<br/>2.发送心跳信息给NameServer，<br/>携带上新的Topic信息完成注册
 DefaultMQProducer ->> SendMessageProcessor: 后续再发送消息，Topic路由信息就已经有了
 ```
 
