@@ -168,8 +168,6 @@ BrokerLiveInfo 中各个属性含义如下所示：
 
 #### 1.2.1 topicQueueTable的数据状况
 
-- topicQueueTable：
-
 ![image-20230305002712927](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230305002712927.png)
 
 这是在四个 Broker 实例启动后，向 NameServer 注册的 Topic 信息，这些 Topic 除了 testCluster、broker-a、broker-b 以外，其他的都是系统预定义的 Topic，例如 `RMQ_SYS_TRANS_OP_HALF_TOPIC` 用来存放半事务消息，`SCHEDULE_TOPIC_XXXX` 用来存放延时消息等等。
@@ -196,57 +194,60 @@ DefaultMQProducer ->> SendMessageProcessor: 后续再发送消息，Topic路由�
 
 我们理解了 Topic：TBW102 的作用，那么我们接下来就使用这个 Topic 来描述 NameServer 的路由信息。
 
-上图中 topicQueueTable 对应于运行时的数据就是：
+上图中 topicQueueTable 对应于运行时的数据结构如下所示（这里只列出 TBW102 的数据）：
 
 ```json
 {
-	"testCluster": [
-		{
-			"brokerName": "broker-a",
-			"readQueueNums": 16,
-			"writeQueueNums": 16,
-			"perm": 7,
-			"topicSynFlag": 0
-		},
-		{
-			"brokerName": "broker-b",
-			"readQueueNums": 16,
-			"writeQueueNums": 16,
-			"perm": 7,
-			"topicSynFlag": 0
-		}
-	]
+    "TBW102":{
+        "broker-b":{
+            "brokerName":"broker-b",
+            "readQueueNums":8,
+            "writeQueueNums":8,
+            "perm":7,
+            "topicSysFlag":0
+        },
+        "broker-a":{
+            "brokerName":"broker-a",
+            "readQueueNums":8,
+            "writeQueueNums":8,
+            "perm":7,
+            "topicSysFlag":0
+        }
+    }
 }
 ```
 
-- brokerAddrTable：
-  ![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213232601362.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
-  上图中brokerAddrTable对应于运行时的数据就是：
+#### 1.2.2 brokerAddrTable的数据状况
+
+![image-20230305215131614](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230305215131614.png)
+上图中 brokerAddrTable 对应于运行时的数据结构如下所示：
 
 ```json
 {
-	"broker-a": {
-		"cluster": "testCluster",
-		"brokerName": "broker-a",
-		"brokerAddrs": {
-			"0": "172.20.192.218:10911",
-			"1": "172.20.192.218:10921"
-		}
-	},
-	"broker-b": {
-		"cluster": "testCluster",
-		"brokerName": "broker-b",
-		"brokerAddrs": {
-			"0": "172.20.192.218:10931",
-			"1": "172.20.192.218:10941"
-		}
-	}
+    "broker-b":{
+        "cluster":"testCluster",
+        "brokerName":"broker-b",
+        "brokerAddrs":{
+            "0":"192.168.3.113:10931",
+            "1":"192.168.3.113:10941"
+        },
+        "enableActingMaster":false
+    },
+    "broker-a":{
+        "cluster":"testCluster",
+        "brokerName":"broker-a",
+        "brokerAddrs":{
+            "0":"192.168.3.113:10911",
+            "1":"192.168.3.113:10921"
+        },
+        "enableActingMaster":false
+    }
 }
 ```
 
-- clusterAddrTable：
-  ![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213223306896.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
-  上图中clusterAddrTable对应于运行时的数据就是：
+#### 1.2.3 clusterAddrTable的数据状况
+
+![image-20230305202146687](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230305202146687.png)上图中 clusterAddrTable 对应于运行时的数据结构如下所示：
 
 ```json
 {
@@ -257,11 +258,12 @@ DefaultMQProducer ->> SendMessageProcessor: 后续再发送消息，Topic路由�
 }
 ```
 
-这里需要说明一点，HashSet底层的实现结构仍然是HashMap，所以这里使用HashMap的方式来展示HashSet，读者关心Map的键即可。
+这里需要说明一点，HashSet 底层的实现结构仍然是 HashMap，所以这里使用 HashMap 的方式来展示 HashSet，读者关心 Map 的键即可。
 
-- brokerLiveTable：
-  ![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213233041302.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xhbW1vbnBldGVy,size_16,color_FFFFFF,t_70)
-  上图中brokerLiveTable对应于运行时的数据就是：
+#### 1.2.4 brokerLiveTable的数据状况
+
+![image-20230305220646605](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230305220646605.png)
+上图中 brokerLiveTable 对应于运行时的数据结构如下所示：
 
 ```json
 {
