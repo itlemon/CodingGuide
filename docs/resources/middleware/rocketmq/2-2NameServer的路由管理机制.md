@@ -180,16 +180,16 @@ BrokerLiveInfo 中各个属性含义如下所示：
 DefaultMQProducer ->> DefaultMQProducer: 发送消息send(Topic, Message)
 DefaultMQProducer ->> NameServer: 第一次拉取TopicPublishInfo
 NameServer -->> DefaultMQProducer: Topic不存在
-DefaultMQProducer -> NameServer: 第二次拉取TopicPublishiInfo，<br/>此时拉取的是TBW102的路由信息
+DefaultMQProducer ->> NameServer: 第二次拉取TopicPublishiInfo，<br/>此时拉取的是TBW102的路由信息
 NameServer -->> DefaultMQProducer: 返回TBW102的路由信息
 Note left of DefaultMQProducer: 1.Producer根据TBW102的路由信息构建TopicPublishInfo<br/>2.将TopicPublishInfo缓存到本地<br/>3.按照路由信息发送消息
-DefaultMQProducer -> SendMessageProcessor: 发送消息，并携带defaultTopic=TBW102
+DefaultMQProducer ->> SendMessageProcessor: 发送消息，并携带defaultTopic=TBW102
 SendMessageProcessor ->> SendMessageProcessor: 消息检查msgCheck()
 Note left of SendMessageProcessor: 消息校验：<br/>1.Topic合法性校验<br/>2.Topic不存在，自动创建
 SendMessageProcessor ->> TopicConfigManager: 创建Topic
 TopicConfigManager ->> TopicConfigManager: createTopicInSendMessageMethod()
-Note left of TopicConfigManger: 1.基于TBW102的配置创建Topic<br/>2.发送心跳信息给NameServer，携带上新的Topic信息完成注册
-DefaultMQProducer -> SendMessageProcessor: 后续再发送消息，Topic路由信息就已经有了
+Note right of TopicConfigManager: 1.基于TBW102的配置创建Topic<br/>2.发送心跳信息给NameServer，携带上新的Topic信息完成注册
+DefaultMQProducer ->> SendMessageProcessor: 后续再发送消息，Topic路由信息就已经有了
 ```
 
 根据时序图，我们一起总结下流程：Producer 发送一个不存在的 Topic 消息时，首先会从 NameServer 拉取 Topic 的路由信息，第一次拉取必然失败，第二次会直接拉取 TBW102 的路由数据，基于它创建 TopicPublishInfo 并缓存到本地，进行正常的消息发送，在 Header 里将 defaultTopic 设置为 TBW102。Broker 接收到消息时，先对消息做见检查，检查到 Topic 不存在，会基于 defaultTopic 的配置去创建该 Topic，然后注册到 NameServer 上，这样一个全新的Topic就被自动创建了。
