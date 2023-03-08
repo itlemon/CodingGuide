@@ -157,8 +157,7 @@ public static void parseCommandlineAndConfigFile(String[] args) throws Exception
     nettyServerConfig = new NettyServerConfig();
     nettyClientConfig = new NettyClientConfig();
 
-    // 这里默认启动监听的端口是9876，其实可以在上面的命令行选项中加入一个自定义的选型，并设置一个端口选项
-    // 这样就可以在启动的时候通过命令行传入监听端口
+    // 这里默认启动监听的端口是9876
     nettyServerConfig.setListenPort(9876);
     controllerConfig = new ControllerConfig();
 
@@ -236,51 +235,7 @@ public static void parseCommandlineAndConfigFile(String[] args) throws Exception
 
 - 第三步：创建配置对象；
 
-- 第四步：设置 NameServer 的启动监听端口，默认是 9876，读者可以直接修改这里的端口号，但是笔者建议额外在 `NamesrvStartup#buildCommandlineOptions` 方法中添加一个命令行选项，例如 `listenPort`，从而支持从命令行中通过`-l`或者`--listenPort`来指定端口，示例代码如下高亮部分：
-
-  :::: code-group
-  ::: code-group-item 改造代码1
-
-  ```java{10-13}
-  public static Options buildCommandlineOptions(final Options options) {
-      Option opt = new Option("c", "configFile", true, "Name server config properties file");
-      opt.setRequired(false);
-      options.addOption(opt);
-  
-      opt = new Option("p", "printConfigItem", false, "Print all config items");
-      opt.setRequired(false);
-      options.addOption(opt);
-  
-      // 这里额外加一个选项，支持配置自定义监听端口
-      opt = new Option("l", "listenPort", true, "Name server custom listening port");
-      opt.setRequired(false);
-      options.addOption(opt);
-      return options;
-  }
-  ```
-
-  :::
-  ::: code-group-item 改造代码2
-
-  ```java{8-13}
-  // 创建配置对象
-  namesrvConfig = new NamesrvConfig();
-  nettyServerConfig = new NettyServerConfig();
-  nettyClientConfig = new NettyClientConfig();
-  
-  // 这里默认启动监听的端口是9876，其实可以在上面的命令行选项中加入一个自定义的选型，并设置一个端口选项
-  // 这样就可以在启动的时候通过命令行传入监听端口
-  String listenPort;
-  if (commandLine.hasOption('l') && (StringUtils.isNumeric(listenPort = commandLine.getOptionValue('l')))) {
-      nettyServerConfig.setListenPort(Integer.parseInt(listenPort));
-  } else {
-      nettyServerConfig.setListenPort(9876);
-  }
-  controllerConfig = new ControllerConfig();
-  ```
-
-  :::
-  ::::
+- 第四步：设置 NameServer 的启动监听端口，默认是 9876，可以在 NameServer 配置文件中设置参数 `listenPort`，从而实现默认端口的覆盖；
 
 - 第五步：获取命令行中configFile的值，这个值是配置文件的绝对路径，如果命令行参数中没有配置，那么将采用默认值，默认值是 `{user.home}/namesrv/namesrv.properties`，解析该配置文件（注意配置文件中的要使用键值对的形式，例如： key=value，且 key 要保持和上述配置对象中的属性名称一致），将配置加载到各配置对象中。并且检查命令行参数中是否包含选项 `p` ，如果包含，那么将打印所有配置信息并退出进程；
 

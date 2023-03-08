@@ -112,57 +112,15 @@ BrokerLiveInfo 中各个属性含义如下所示：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213185641205.png)
 我们启动一个 NameServer 服务，并且启动四个 Broker 服务（分别是 BrokerStartup-am、BrokerStartup-as、BrokerStartup-bm、BrokerStartup-bs )，按照上面的图展示的方式来进行部署，一起验证一下 RouteInfoManager 内部的数据存储的内容。
 
-为了可以在本机 IntelliJ IDEA 中启动四个 Broker 实例，我们需要为这四个 Broker 实例设置独立的 `ROCKETMQ_HOME`，一般企业生产环境，各个 Broker 基本独立部署在独立的物理机中，真实生产环境， `ROCKETMQ_HOME` 可以是一样的，但是本篇文章的验证案例，是需要在同一台机器上部署，所以各个 Broker 实例的 `ROCKETMQ_HOME` 要设置为不一样的。另外，Broker 默认的监听端口是 $10911$，我们也需要稍微改造一下 Broker 的启动代码，将其改造成支持在命令参数中配置监听端口，这样的话，可以在启动 Broker 的时候设置监听的端口，防止各个 Broker 因端口占用而无法启动。
+为了可以在本机 IntelliJ IDEA 中启动四个 Broker 实例，我们需要为这四个 Broker 实例设置独立的 `ROCKETMQ_HOME`，一般企业生产环境，各个 Broker 基本独立部署在独立的物理机中，真实生产环境， `ROCKETMQ_HOME` 可以是一样的，但是本篇文章的验证案例，是需要在同一台机器上部署，所以各个 Broker 实例的 `ROCKETMQ_HOME` 要设置为不一样的。另外，Broker 默认的监听端口是 $10911$，我们也需要在配置文件 `broker.conf` 配置一下启动端口，将将每个 Broker 实例配置成不同的端口，这样可以防止各个 Broker 因端口占用而无法启动。
 
-- 对于各个 Broker 独立的 `ROCKETMQ_HOME`，我们可以在之前配置的目录下新建四个目录 broker-am、broker-as、broker-bm、broker-bs，作为四个 Broker 实例的 `ROCKETMQ_HOME`，再在每个目录下新建 conf 目录用于存储 Broker 配置文件，新建 logs 目录用于存放日志，新建 store 目录用于存储 Broker 数据。笔者已按照上图的配置方式配置四个配置文件，这四个配置文件我已经放在 [Github](https://github.com/itlemon/rocketmq-5.0.0/tree/master/distribution/conf/custom) 上，读者可以拷贝下来，修改一下 `ROCKETMQ_HOME` 路径即可使用。
+对于各个 Broker 独立的 `ROCKETMQ_HOME`，我们可以在之前配置的目录下新建四个目录 broker-am、broker-as、broker-bm、broker-bs，作为四个 Broker 实例的 `ROCKETMQ_HOME`，再在每个目录下新建 conf 目录用于存储 Broker 配置文件，新建 logs 目录用于存放日志，新建 store 目录用于存储 Broker 数据。笔者已按照上图的配置方式配置四个配置文件，这四个配置文件我已经放在 [Github](https://github.com/itlemon/rocketmq-5.0.0/tree/master/distribution/conf/custom) 上，读者可以拷贝下来，修改一下 `ROCKETMQ_HOME` 路径即可使用。
 
-- 对于支持在命令行中设置自定义监听端口，我们可以仿照文章《[NameServer的启动原理](./2-1NameServer的启动原理.md)》中对 NameServer 自定义端口的改造，来完成对 Broker 的改造，从而支持从命令行中通过`-l`或者`--listenPort`来指定端口，这里直接贴出代码。
+到目前为止，我们四个 Broker 实例的配置文件、ROCKETMQ_HOME、自定义端口都已经完成，接下来在 IDEA 中配置启动面板，这里给出一个示例：
 
-  :::: code-group
-  ::: code-group-item 改造代码1
+![image-20230308224638170](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230308224638170.png)
 
-  ```java{11-14}
-  // 这里改造的是org.apache.rocketmq.broker.BrokerStartup#buildCommandlineOptions方法
-  public static Options buildCommandlineOptions(final Options options) {
-      Option opt = new Option("c", "configFile", true, "Name server config properties file");
-      opt.setRequired(false);
-      options.addOption(opt);
-  
-      opt = new Option("p", "printConfigItem", false, "Print all config items");
-      opt.setRequired(false);
-      options.addOption(opt);
-  
-      // 这里额外加一个选项，支持配置自定义监听端口
-      opt = new Option("l", "listenPort", true, "Name server custom listening port");
-      opt.setRequired(false);
-      options.addOption(opt);
-      return options;
-  }
-  ```
-
-  :::
-  ::: code-group-item 改造代码2
-
-  ```java
-  // 这里改造的是org.apache.rocketmq.broker.BrokerStartup#createBrokerController方法
-  // 这里默认启动监听的端口是10911，其实可以在上面的命令行选项中加入一个自定义的选型，并设置一个端口选项
-  // 这样就可以在启动的时候通过命令行传入监听端口
-  String listenPort;
-  if (commandLine.hasOption('l') && (StringUtils.isNumeric(listenPort = commandLine.getOptionValue('l')))) {
-      nettyServerConfig.setListenPort(Integer.parseInt(listenPort));
-  } else {
-      nettyServerConfig.setListenPort(10911);
-  }
-  ```
-
-  :::
-  ::::
-
-到目前为止，我们四个 Broker 实例的配置文件、ROCKETMQ_HOME、自定义端口改造都已经完成，接下来在 IDEA 中配置启动面板，这里给出一个示例：
-
-![image-20230304015223935](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230304015223935.png)
-
-尤其要注意图中展示红框标记的地方，每个 Broker 要指向对应的配置文件，需要使用不同的端口，这里设置了一个自定义的命令行参数，支持 Broker 自定义启动端口（默认是 $10911$，需要在同一机器启动多个 Broker 服务，最好支持自定义端口设置），需要注意的一点是，如果设置的 broker-am 的启动端口是 $10911$，那么 broker-as 的不能设置为 $10912$，因为每个每个 Broker 启动后还会占用启动端口的后一个端口。笔者使用端口分别是 $10911$、$10921$、$10931$、$10941$，读者可以根据自己的想法设置即可。
+尤其要注意图中展示红框标记的地方，每个 Broker 要指向对应的配置文件，配置文件中 Broker 自定义启动端口（默认是 $10911$，需要在同一机器启动多个 Broker 服务，需要自定义端口设置），需要注意的一点是，如果设置的 broker-am 的启动端口是 $10911$，那么 broker-as 的不能设置为 $10912$，因每个 Broker 启动后还会占用启动端口的后一个端口。笔者使用端口分别是 $10911$、$10921$、$10931$、$10941$，读者可以根据自己的想法设置即可。
 
 我们首先启动 NameServer，这里为了演示方便，启动一个 NameServer 即可，然后依次启动四个 Broker 服务，最后在启动完 broker-bs 后，给 NameServer 的 RouteInfoManager 中的 registerBroker 方法加上断点，因为 Broker 向 NameServer 发送心跳的时候会调用这个方法来维护路由表，加上断点后可以很方便地查看运行时数据。
 
@@ -219,7 +177,8 @@ DefaultMQProducer ->> SendMessageProcessor: 后续再发送消息，Topic路由�
 
 #### 1.2.2 brokerAddrTable的数据状况
 
-![image-20230305215131614](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230305215131614.png)
+![image-20230308232203392](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230308232203392.png)
+
 上图中 brokerAddrTable 对应于运行时的数据结构如下所示：
 
 ```json
@@ -228,8 +187,8 @@ DefaultMQProducer ->> SendMessageProcessor: 后续再发送消息，Topic路由�
         "cluster":"testCluster",
         "brokerName":"broker-b",
         "brokerAddrs":{
-            "0":"192.168.3.113:10931",
-            "1":"192.168.3.113:10941"
+            "0":"192.168.1.25:10931",
+            "1":"192.168.1.25:10941"
         },
         "enableActingMaster":false
     },
@@ -237,8 +196,8 @@ DefaultMQProducer ->> SendMessageProcessor: 后续再发送消息，Topic路由�
         "cluster":"testCluster",
         "brokerName":"broker-a",
         "brokerAddrs":{
-            "0":"192.168.3.113:10911",
-            "1":"192.168.3.113:10921"
+            "0":"192.168.1.25:10911",
+            "1":"192.168.1.25:10921"
         },
         "enableActingMaster":false
     }
@@ -262,14 +221,15 @@ DefaultMQProducer ->> SendMessageProcessor: 后续再发送消息，Topic路由�
 
 #### 1.2.4 brokerLiveTable的数据状况
 
-![image-20230305220646605](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230305220646605.png)
+![image-20230308232446507](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20230308232446507.png)
+
 上图中 brokerLiveTable，它是一个 Map 结构，Map 的键是 BrokerAddrInfo 对象，Map 的值是 BrokerLiveInfo 对象，在运行时，键的数据结构为：
 
 ```json
 {
     "clusterName":"testCluster",
-    "brokerAddr":"192.168.3.113:10911",
-    "hash":-1481157086
+    "brokerAddr":"192.168.1.25:10911",
+    "hash":-1235770154
 }
 ```
 
@@ -277,33 +237,33 @@ DefaultMQProducer ->> SendMessageProcessor: 后续再发送消息，Topic路由�
 
 ```json
 {
-    "192.168.3.113:10911":{
-        "lastUpdateTimestamp":1678025133747,
+    "192.168.1.25:10911":{
+        "lastUpdateTimestamp":1678288800134,
         "heartbeatTimeoutMillis":120000,
         "dataVersion":"dataVersionObject",
         "channel":"channelObject",
-        "haServerAddr":"192.168.3.113:10912"
+        "haServerAddr":"192.168.1.25:10912"
     },
-    "192.168.3.113:10941":{
-        "lastUpdateTimestamp":1678025138611,
+    "192.168.1.25:10921":{
+        "lastUpdateTimestamp":1678288807815,
         "heartbeatTimeoutMillis":120000,
         "dataVersion":"dataVersionObject",
         "channel":"channelObject",
-        "haServerAddr":"192.168.3.113:10942"
+        "haServerAddr":"192.168.1.25:10922"
     },
-    "192.168.3.113:10931":{
-        "lastUpdateTimestamp":1678025130572,
+    "192.168.1.25:10931":{
+        "lastUpdateTimestamp":1678288813012,
         "heartbeatTimeoutMillis":120000,
         "dataVersion":"dataVersionObject",
         "channel":"channelObject",
-        "haServerAddr":"192.168.3.113:10932"
+        "haServerAddr":"192.168.1.25:10932"
     },
-    "192.168.3.113:10921":{
-        "lastUpdateTimestamp":1678025130599,
+    "192.168.1.25:10941":{
+        "lastUpdateTimestamp":1678288816376,
         "heartbeatTimeoutMillis":120000,
         "dataVersion":"dataVersionObject",
         "channel":"channelObject",
-        "haServerAddr":"192.168.3.113:10922"
+        "haServerAddr":"192.168.1.25:10942"
     }
 }
 ```
