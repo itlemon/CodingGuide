@@ -274,27 +274,40 @@ DefaultMQProducer ->> SendMessageProcessor: 后续再发送消息，Topic路由�
 
 ### 2.1 路由信息注册
 
-路由信息注册通常是指，将自身的信息告诉服务注册中心，在 RocketMQ 中，这里的“自身”是指 Broker，而服务注册中心指得就是 NameServer。Broker 在启动后，会向所有的 NameServer 注册自身的元信息，通常包括：集群名称（clusterName）、Broker 地址（brokerAddr）、Broker 名称（brokerName）、Broker ID（brokerId）、高可用地址（haServerAddr）、Topic相关信息（topicConfigWrapper）、过滤服务器列表、通信通道等信息等。这些元信息的注册，都是通过心跳机制来实现的，所谓的心跳机制，一般都是通过定时任务来实现的，按照一定的频率向NameServer 发送元信息数据，从而实现续约。每个 Broker 会每隔 $30$ 秒向 NameServer 发送心跳，NameServer 接收到 Broker 心跳数据后，会去实时更新 brokerLiveTable 中 BrokerLiveInfo 的 lastUpdateTimestamp 字段（上一次心跳时间戳），当然，NameServer 也有检查机制，会每隔 $10$ 秒扫描 brokerLiveTable，如果发现某个 Broker 的 lastUpdateTimestamp 字段超过 $2$min 没有更新，那么就认为该 Broker 存在故障，NameServer 会主动将其从路由表中剔除，同时关闭通信通道。
+路由信息注册通常是指，将自身的信息告诉服务注册中心，这里的“自身”是指 Broker，而服务注册中心指得就是 NameServer。Broker 在启动后，会向所有的 NameServer 注册自身的元信息，通常包括：集群名称（clusterName）、Broker 地址（brokerAddr）、Broker 名称（brokerName）、Broker ID（brokerId）、高可用地址（haServerAddr）、Topic相关信息（topicConfigWrapper）、过滤服务器列表、通信通道等信息等。这些元信息的注册，都是通过心跳机制来实现的，所谓的心跳机制，一般都是通过定时任务来实现的，按照一定的频率向NameServer 发送元信息数据，从而实现续约。每个 Broker 会每隔 $30$ 秒向 NameServer 发送心跳，NameServer 接收到 Broker 心跳数据后，会去实时更新 brokerLiveTable 中 BrokerLiveInfo 的 lastUpdateTimestamp 字段（上一次心跳时间戳），当然，NameServer 也有检查机制，会每隔 $10$ 秒扫描 brokerLiveTable，如果发现某个 Broker 的 lastUpdateTimestamp 字段超过 $2$min 没有更新，那么就认为该 Broker 存在故障，NameServer 会主动将其从路由表中剔除，同时关闭通信通道。
 
-那么 Broker 是如何向 NameServer 进行注册的呢？下面的内容将一一揭秘。
+那么 Broker 是如何向 NameServer 进行注册的呢？下面的内容将一一揭秘。本文中代码片段均来自 [代码仓库](https://github.com/itlemon/rocketmq-5.0.0)，Broker 启动相关代码不再全量引入进来，启动原理主要部分代码均有注释，读者可以自行前往阅读。
 
 从 BrokerController 的 start() 方法可以看出，Broker 在启动的时候，会注册一个定时任务，每隔 $30$s（默认值，可配置 $10$~$60$s）向 NameServer 发送元数据信息。`brokerConfig.getRegisterNameServerPeriod()`的默认值是 $30$s。
 
 ```java
-// 注册一个定时任务，默认每隔30s向NameServer发送元数据信息
-this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                BrokerController.this.registerBrokerAll(true,
-                        false, brokerConfig.isForceRegister());
-            } catch (Throwable e) {
-                log.error("registerBrokerAll Exception", e);
+// 注册一个定时任务，默认每隔30s向NameServer发送元数据信息，发送元数据信息的间隔可以设置10s到60s
+scheduledFutures.add(this.scheduledExecutorService.scheduleAtFixedRate(new AbstractBrokerRunnable(this.getBrokerIdentity()) {
+    @Override
+    public void run2() {
+        try {
+            // broker支持延迟注册到NameServer，如果还没到时间，那么将不会去注册
+            if (System.currentTimeMillis() < shouldStartTime) {
+                BrokerController.LOG.info("Register to namesrv after {}", shouldStartTime);
+                return;
             }
-        }, 1000 * 10, Math.max(10000,
-        Math.min(brokerConfig.getRegisterNameServerPeriod(), 60000)),
-        TimeUnit.MILLISECONDS);
+            
+            // 如果broker是独立的，那么无需注册到NameServer
+            if (isIsolated) {
+                BrokerController.LOG.info("Skip register for broker is isolated");
+                return;
+            }
+          
+            // 注册逻辑在registerBrokerAll方法中
+            BrokerController.this.registerBrokerAll(true, false, brokerConfig.isForceRegister());
+        } catch (Throwable e) {
+            BrokerController.LOG.error("registerBrokerAll Exception", e);
+        }
+    }
+}, 1000 * 10, Math.max(10000, Math.min(brokerConfig.getRegisterNameServerPeriod(), 60000)), TimeUnit.MILLISECONDS));
 ```
 
-具体的注册行为代码需要进入到registerBrokerAll方法中，这里将分析后的registerBrokerAll方法贴在下面：
+具体的注册行为代码需要进入到 registerBrokerAll 方法中，这里将分析后的 registerBrokerAll 方法贴在下面：
 
 ```java
 /**
