@@ -318,33 +318,42 @@ scheduledFutures.add(this.scheduledExecutorService.scheduleAtFixedRate(new Abstr
  * @param forceRegister 是否是强制注册
  */
 public synchronized void registerBrokerAll(final boolean checkOrderConfig, boolean oneway, boolean forceRegister) {
-    // 将Topic配置进行包装，其实就是一些默认的topic信息
-    TopicConfigSerializeWrapper topicConfigWrapper =
-            this.getTopicConfigManager().buildTopicConfigSerializeWrapper();
+
+    // 创建一个TopicConfig和TopicQueueMapping相关的包装类对象
+    TopicConfigAndMappingSerializeWrapper topicConfigWrapper = new TopicConfigAndMappingSerializeWrapper();
+
+    // 包装版本对象和系统自带的一些Topic配置信息，具体有哪些Topic，可以从TopicValidator类中看到
+    topicConfigWrapper.setDataVersion(this.getTopicConfigManager().getDataVersion());
+    topicConfigWrapper.setTopicConfigTable(this.getTopicConfigManager().getTopicConfigTable());
+
+    // 包装TopicQueueMapping相关的映射信息
+    topicConfigWrapper.setTopicQueueMappingInfoMap(this.getTopicQueueMappingManager().getTopicQueueMappingTable().entrySet().stream().map(
+        entry -> new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), TopicQueueMappingDetail.cloneAsMappingInfo(entry.getValue()))
+    ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
     // 如果Broker只有读权限或者写权限，那么需要将Topic的权限设置为和Broker相同
     if (!PermName.isWriteable(this.getBrokerConfig().getBrokerPermission())
-            || !PermName.isReadable(this.getBrokerConfig().getBrokerPermission())) {
+        || !PermName.isReadable(this.getBrokerConfig().getBrokerPermission())) {
         ConcurrentHashMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>();
         for (TopicConfig topicConfig : topicConfigWrapper.getTopicConfigTable().values()) {
             TopicConfig tmp =
-                    new TopicConfig(topicConfig.getTopicName(), topicConfig.getReadQueueNums(),
-                            topicConfig.getWriteQueueNums(),
-                            this.brokerConfig.getBrokerPermission());
+                new TopicConfig(topicConfig.getTopicName(), topicConfig.getReadQueueNums(), topicConfig.getWriteQueueNums(),
+                    topicConfig.getPerm() & this.brokerConfig.getBrokerPermission(), topicConfig.getTopicSysFlag());
             topicConfigTable.put(topicConfig.getTopicName(), tmp);
         }
         topicConfigWrapper.setTopicConfigTable(topicConfigTable);
     }
 
-    // 判断是否需要注册，如果不满足强制注册，那么就需要调用needRegister来判断是否需要注册
-    // needRegister内部逻辑也很简单，就是去请求NameServer，判断NameServer存储的Broker信息
+    // forceRegister默认情况下是true，如果为false，那么就需要调用needRegister来判断是否需要注册
+    // needRegister内部逻辑也很简单，就是去请求所有的NameServer，判断NameServer存储的Broker信息
     // 是否和当前的Broker版本信息是否一致，如果是一致的，那么就不需要注册
     if (forceRegister || needRegister(this.brokerConfig.getBrokerClusterName(),
-            this.getBrokerAddr(),
-            this.brokerConfig.getBrokerName(),
-            this.brokerConfig.getBrokerId(),
-            this.brokerConfig.getRegisterBrokerTimeoutMills())) {
-        // Broker向NameServer注册的主要方法
+        this.getBrokerAddr(),
+        this.brokerConfig.getBrokerName(),
+        this.brokerConfig.getBrokerId(),
+        this.brokerConfig.getRegisterBrokerTimeoutMills(),
+        this.brokerConfig.isInBrokerContainer())) {
+        // 注册Broker信息到NameServer的核心逻辑
         doRegisterBrokerAll(checkOrderConfig, oneway, topicConfigWrapper);
     }
 }
