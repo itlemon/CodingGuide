@@ -109,7 +109,8 @@ BrokerLiveInfo 中各个属性含义如下所示：
 ### 1.2 路由信息真实存储状况
 
 文章《[NameServer的启动原理](./2-1NameServer的启动原理.md)》第一张图是一个 $2$ 主 $2$ 从的集群部署方式，集群中包含 $2$ 个 Master 的 Broker 和 $2$ 个 Slave 的 Broker，使用 BrokerData 存储上述部署方式，其表现为以下形式：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210213185641205.png)
+
+![20210213185641205](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/20210213185641205.png)
 我们启动一个 NameServer 服务，并且启动四个 Broker 服务（分别是 BrokerStartup-am、BrokerStartup-as、BrokerStartup-bm、BrokerStartup-bs )，按照上面的图展示的方式来进行部署，一起验证一下 RouteInfoManager 内部的数据存储的内容。
 
 为了可以在本机 IntelliJ IDEA 中启动四个 Broker 实例，我们需要为这四个 Broker 实例设置独立的 `ROCKETMQ_HOME`，一般企业生产环境，各个 Broker 基本独立部署在独立的物理机中，真实生产环境， `ROCKETMQ_HOME` 可以是一样的，但是本篇文章的验证案例，是需要在同一台机器上部署，所以各个 Broker 实例的 `ROCKETMQ_HOME` 要设置为不一样的。另外，Broker 默认的监听端口是 $10911$，我们也需要在配置文件 `broker.conf` 配置一下启动端口，将将每个 Broker 实例配置成不同的端口，这样可以防止各个 Broker 因端口占用而无法启动。
