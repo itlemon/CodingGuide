@@ -360,23 +360,27 @@ public synchronized void registerBrokerAll(final boolean checkOrderConfig, boole
 }
 ```
 
-在doRegisterBrokerAll方法内，最主要的就是调用brokerOuterAPI的registerBrokerAll接口来向NameServer进行注册。
+在 doRegisterBrokerAll 方法内，最主要的就是调用 brokerOuterAPI 的 registerBrokerAll 接口来向 NameServer 进行注册。
 
 ```java
+// 注册Broker信息到NameServer的核心逻辑
 List<RegisterBrokerResult> registerBrokerResultList = this.brokerOuterAPI.registerBrokerAll(
-                this.brokerConfig.getBrokerClusterName(),
-                this.getBrokerAddr(),
-                this.brokerConfig.getBrokerName(),
-                this.brokerConfig.getBrokerId(),
-                this.getHAServerAddr(),
-                topicConfigWrapper,
-                this.filterServerManager.buildNewFilterServerList(),
-                oneway,
-                this.brokerConfig.getRegisterBrokerTimeoutMills(),
-                this.brokerConfig.isCompressedRegister());
+    this.brokerConfig.getBrokerClusterName(),
+    this.getBrokerAddr(),
+    this.brokerConfig.getBrokerName(),
+    this.brokerConfig.getBrokerId(),
+    this.getHAServerAddr(),
+    topicConfigWrapper,
+    this.filterServerManager.buildNewFilterServerList(),
+    oneway,
+    this.brokerConfig.getRegisterBrokerTimeoutMills(),
+    this.brokerConfig.isEnableSlaveActingMaster(),
+    this.brokerConfig.isCompressedRegister(),
+    this.brokerConfig.isEnableSlaveActingMaster() ? this.brokerConfig.getBrokerNotActiveTimeoutMillis() : null,
+    this.getBrokerIdentity());
 ```
 
-接下来的操作就是遍历每一个NameServer服务地址，然后分别向每一个NameServer进行注册操作，具体代码如下所示：
+registerBrokerAll 方法的主要逻辑就是遍历每一个 NameServer 服务地址，然后分别向每一个 NameServer 进行注册操作，具体代码如下所示：
 
 ```java
 public List<RegisterBrokerResult> registerBrokerAll(
@@ -389,14 +393,18 @@ public List<RegisterBrokerResult> registerBrokerAll(
         final List<String> filterServerList,
         final boolean oneway,
         final int timeoutMills,
-        final boolean compressed) {
+        final boolean enableActingMaster,
+        final boolean compressed,
+        final Long heartbeatTimeoutMillis,
+        final BrokerIdentity brokerIdentity) {
 
     // 封装注册结果的容器
-    final List<RegisterBrokerResult> registerBrokerResultList = Lists.newArrayList();
+    final List<RegisterBrokerResult> registerBrokerResultList = new CopyOnWriteArrayList<>();
+
     // 获取NameServer列表
-    List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
-    if (nameServerAddressList != null && !nameServerAddressList.isEmpty()) {
-        // 构建注册Broker的请求头对象
+    List<String> nameServerAddressList = this.remotingClient.getAvailableNameSrvList();
+    if (nameServerAddressList != null && nameServerAddressList.size() > 0) {
+        // 构建注册Broker信息的请求头对象
         final RegisterBrokerRequestHeader requestHeader = new RegisterBrokerRequestHeader();
         // 将Broker的主要元信息存储到请求头中
         requestHeader.setBrokerAddr(brokerAddr);
@@ -404,40 +412,59 @@ public List<RegisterBrokerResult> registerBrokerAll(
         requestHeader.setBrokerName(brokerName);
         requestHeader.setClusterName(clusterName);
         requestHeader.setHaServerAddr(haServerAddr);
-        requestHeader.setCompressed(compressed);
+        requestHeader.setEnableActingMaster(enableActingMaster);
+        requestHeader.setCompressed(false);
+        // 该参数要特殊说明一下：只有当enableActingMaster为true的时候才生效（在container模式下），这个心跳超时默认时间是10s，
+        if (heartbeatTimeoutMillis != null) {
+            requestHeader.setHeartbeatTimeoutMillis(heartbeatTimeoutMillis);
+        }
 
-        // 构建请求体
+        // 构建注册Broker信息的请求体
         RegisterBrokerBody requestBody = new RegisterBrokerBody();
+
         // 将topic配置信息及过滤器服务信息数据封装到请求体中
-        requestBody.setTopicConfigSerializeWrapper(topicConfigWrapper);
+        requestBody.setTopicConfigSerializeWrapper(TopicConfigAndMappingSerializeWrapper.from(topicConfigWrapper));
         requestBody.setFilterServerList(filterServerList);
+
         // 将请求体进行编码（是否进行gzip压缩，默认为false）
         final byte[] body = requestBody.encode(compressed);
         final int bodyCrc32 = UtilAll.crc32(body);
         requestHeader.setBodyCrc32(bodyCrc32);
+
+        // 创建计数器，用来计数完成注册的数量
         final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
+
         // 遍历所有的NameServer地址，分别向每一个NameServer进行注册
         for (final String namesrvAddr : nameServerAddressList) {
-            brokerOuterExecutor.execute(() -> {
-                try {
-                    RegisterBrokerResult result =
-                            registerBroker(namesrvAddr, oneway, timeoutMills, requestHeader, body);
-                    if (result != null) {
-                        registerBrokerResultList.add(result);
-                    }
+            brokerOuterExecutor.execute(new AbstractBrokerRunnable(brokerIdentity) {
+                @Override
+                public void run2() {
+                    try {
 
-                    log.info("register broker[{}]to name server {} OK", brokerId, namesrvAddr);
-                } catch (Exception e) {
-                    log.warn("registerBroker Exception, {}", namesrvAddr, e);
-                } finally {
-                    countDownLatch.countDown();
+                        // 注册Broker，底层调用netty客户端发送请求到NameServer
+                        RegisterBrokerResult result = registerBroker(namesrvAddr, oneway, timeoutMills, requestHeader, body);
+
+                        // 将注册结果添加到结果列表中
+                        if (result != null) {
+                            registerBrokerResultList.add(result);
+                        }
+
+                        LOGGER.info("Registering current broker to name server completed. TargetHost={}", namesrvAddr);
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to register current broker to name server. TargetHost={}", namesrvAddr, e);
+                    } finally {
+                        countDownLatch.countDown();
+                    }
                 }
             });
         }
 
         try {
-            countDownLatch.await(timeoutMills, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
+            // 完成所有注册的默认超时时间是24s，如果在24s内没有完成注册，那么就打印该日志
+            if (!countDownLatch.await(timeoutMills, TimeUnit.MILLISECONDS)) {
+                LOGGER.warn("Registration to one or more name servers does NOT complete within deadline. Timeout threshold: {}ms", timeoutMills);
+            }
+        } catch (InterruptedException ignore) {
         }
     }
 
@@ -445,7 +472,7 @@ public List<RegisterBrokerResult> registerBrokerAll(
 }
 ```
 
-分别向每一个NameServer注册时候，调用的都是同一个方法：registerBroker，底层调用的都是由Netty封装的远程连接，通过请求码来获取远程调用连接，将注册信息发送过去。注册Broker使用到的请求码是`RequestCode.REGISTER_BROKER`，不同的需求使用的请求码是不一样的，比如注销Broker使用到的是`RequestCode.UNREGISTER_BROKER`。
+分别向每一个 NameServer 注册时候，调用的都是同一个方法：registerBroker，底层调用的都是由 Netty 封装的远程连接，通过请求码来获取远程调用连接，将注册信息发送过去。注册 Broker 使用到的请求码是 `RequestCode.REGISTER_BROKER`，不同的需求使用的请求码是不一样的，比如注销 Broker 使用到的是 `RequestCode.UNREGISTER_BROKER`。
 
 ```java
 private RegisterBrokerResult registerBroker(
@@ -454,14 +481,14 @@ private RegisterBrokerResult registerBroker(
         final int timeoutMills,
         final RegisterBrokerRequestHeader requestHeader,
         final byte[] body
-) throws RemotingCommandException, MQBrokerException, RemotingConnectException, RemotingSendRequestException,
-        RemotingTimeoutException,
+) throws RemotingCommandException, MQBrokerException, RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException,
         InterruptedException {
-    // 根据请求码RequestCode.REGISTER_BROKER获取注册Broker信息的远程连接
+
+    // 根据请求码RequestCode.REGISTER_BROKER获取注册Broker信息的远程连接请求对象
     RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.REGISTER_BROKER, requestHeader);
     request.setBody(body);
 
-    // 如果是单向消息，也就是不管注册结果如何，那么就调用不同的方法来进行注册
+    // 如果是单向消息，也就是不管注册结果如何，它调用invokeOneway方法来进行注册
     if (oneway) {
         try {
             this.remotingClient.invokeOneway(namesrvAddr, request, timeoutMills);
@@ -478,8 +505,7 @@ private RegisterBrokerResult registerBroker(
         case ResponseCode.SUCCESS: {
             // 解析注册结果
             RegisterBrokerResponseHeader responseHeader =
-                    (RegisterBrokerResponseHeader) response
-                            .decodeCommandCustomHeader(RegisterBrokerResponseHeader.class);
+                    (RegisterBrokerResponseHeader) response.decodeCommandCustomHeader(RegisterBrokerResponseHeader.class);
             RegisterBrokerResult result = new RegisterBrokerResult();
             result.setMasterAddr(responseHeader.getMasterAddr());
             result.setHaServerAddr(responseHeader.getHaServerAddr());
@@ -492,15 +518,15 @@ private RegisterBrokerResult registerBroker(
             break;
     }
 
-    throw new MQBrokerException(response.getCode(), response.getRemark());
+    throw new MQBrokerException(response.getCode(), response.getRemark(), requestHeader == null ? null : requestHeader.getBrokerAddr());
 }
 ```
 
-再往底层分析就是涉及到Netty的知识了，本文主要围绕RocketMQ来进行源码分析，对于Netty，后续将通过其他的文章来讨论。以上内容就是Broker在启动的过程中向指定的NameServer注册元信息的流程分析。
+再往底层分析就是涉及到 Netty 的知识了，本文主要围绕 RocketMQ 来进行源码分析，对于 Netty，后续将通过其他的文章来讨论。以上内容就是 Broker 在启动的过程中向指定的 NameServer 注册元信息的流程分析。
 
-Broker向指定的NameServer发送了心跳，NameServer接收到心跳后是如何处理的呢？本节中第一小节路由信息管理器中阐述了Broker发送过来的心跳数据是以何种形式存储在路由管理器中，接下来将解析路由信息维护的源代码，方便大家弄清楚其中的原理。
+Broker 向指定的 NameServer 发送了心跳，NameServer 接收到心跳后是如何处理的呢？本节中第一小节路由信息管理器中阐述了 Broker 发送过来的心跳数据是以何种形式存储在路由管理器中，接下来将解析路由信息维护的源代码，方便大家弄清楚其中的原理。
 
-NameServer在初始化的时候，注册了一个处理器DefaultRequestProcessor，专门用于处理网络请求，已经没有印象的读者可以去文章的开始处看NamesrvController的initialize方法。当远程的注册请求到达的时候，都会由DefaultRequestProcessor的processRequest方法来进行处理，该方法其实就是起到了路由的作用，内部根据请求码来判断该调用哪个API来进行具体的操作，对于Broker注册元信息，其实就是转发给RouteInfoManager的registerBroker方法来进行处理的。
+NameServer 在初始化的时候，注册了一个处理器 DefaultRequestProcessor，专门用于处理网络请求，已经没有印象的读者可以去文章的开始处看 NamesrvController 的 initialize 方法。当远程的注册请求到达的时候，都会由 DefaultRequestProcessor 的 processRequest 方法来进行处理，该方法其实就是起到了路由的作用，内部根据请求码来判断该调用哪个 API 来进行具体的操作，对于 Broker 注册元信息，其实就是转发给 RouteInfoManager 的registerBroker 方法来进行处理的。
 
 ```java
 /**
