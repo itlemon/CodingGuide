@@ -39,6 +39,6 @@ else
 fi
 
 git fetch --all && git reset --hard origin/dev && git pull
-sudo yarn install
-sudo yarn docs:build
-sudo nohup yarn docs:serve &
+yarn install
+yarn docs:build
+nohup yarn docs:serve &
