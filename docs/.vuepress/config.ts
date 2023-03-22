@@ -10,7 +10,7 @@ import {commentPlugin} from 'vuepress-plugin-comment2'
 import {seoPlugin} from 'vuepress-plugin-seo2'
 import {svgIconPlugin} from '@goy/vuepress-plugin-svg-icons'
 import {mdEnhancePlugin} from 'vuepress-plugin-md-enhance'
-import {componentsPlugin} from 'vuepress-plugin-components'
+// import {componentsPlugin} from 'vuepress-plugin-components'
 
 import {head, navbarZh, sidebarZh,} from './configs'
 
@@ -66,7 +66,7 @@ export default defineUserConfig({
             // use shiki plugin in production mode instead
             prismjs: true,
             // 这里关闭默认主题的返回顶端
-            backToTop: false,
+            // backToTop: false,
         },
     }),
 
@@ -148,16 +148,16 @@ export default defineUserConfig({
         }),
 
         // componentsPlugin
-        componentsPlugin({
-            components: ['FontIcon'],
-            componentOptions: {
-                fontIcon: {
-                    assets: '//at.alicdn.com/t/c/font_2154804_snaqmfegfdf.css',
-                },
-            },
-            rootComponents: {
-                backToTop: true,
-            }
-        }),
+        // componentsPlugin({
+        //     components: ['FontIcon'],
+        //     componentOptions: {
+        //         fontIcon: {
+        //             assets: '//at.alicdn.com/t/c/font_2154804_snaqmfegfdf.css',
+        //         },
+        //     },
+        //     rootComponents: {
+        //         backToTop: true,
+        //     }
+        // }),
     ],
 })
