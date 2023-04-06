@@ -20,13 +20,13 @@ git clone git@github.com:itlemon/CodingGuide.git
 第二步：安装依赖
 
 ```shell
-npm install
+yarn install
 ```
 
 第三步：本地热部署
 
 ```shell
-npm run docs:dev
+yarn docs:dev
 ```
 
 访问： [http://localhost:4000](http://localhost:4000) 可以看到本地部署的博客，支持动态修改更新。
@@ -45,8 +45,8 @@ Linux 或者 macOS 还可以使用命令：
 
 ```shell
 git pull
-sudo npm install
-sudo nohup npm run docs:dev &
+yarn install
+nohup yarn docs:dev &
 ```
 
 - Windows
@@ -55,8 +55,8 @@ Windows用户请使用命令：
 
 ```shell
 git pull
-sudo npm install
-start npm run docs:dev &
+yarn install
+start yarn docs:dev &
 ```
 
 服务器部署方式默认端口是`4000`，需要注意的是，使用脚本部署或者`nohup`及`start`来部署，都是后台启动，重新启动的时候需要kill原有的进程，才能生效。

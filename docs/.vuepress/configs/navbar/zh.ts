@@ -2,6 +2,10 @@ import type {NavbarConfig} from '@vuepress/theme-default'
 
 export const navbarZh: NavbarConfig = [
     {
+        text: 'ChatGPT',
+        link: '/resources/chatgpt/'
+    },
+    {
         text: '数据结构与算法',
         link: '/resources/data-structure-and-algorithm/'
     },
