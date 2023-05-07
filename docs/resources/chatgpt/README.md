@@ -18,6 +18,7 @@ GitHub地址：https://github.com/itlemon/chatgpt4j
 
 ## 更新日志📝
 
+- [x] 1.0.1 将 KeySelectorStrategy 设置为函数式接口
 - [x] 1.0.0 支持 OpenAI 提供的全部接口
 
 ## 接口支持🧩
@@ -44,13 +45,13 @@ GitHub地址：https://github.com/itlemon/chatgpt4j
 
 ### 1.导入pom依赖
 
-目前最新版本是 1.0.0，读者可以从[中央仓库](https://mvnrepository.com/artifact/cn.codingguide/chatgpt4j)搜索最新版本导入到pom中即可。
+目前最新版本是 1.0.1，读者可以从[中央仓库](https://mvnrepository.com/artifact/cn.codingguide/chatgpt4j)搜索最新版本导入到pom中即可。
 
 ```xml
 <dependency>
     <groupId>cn.codingguide</groupId>
     <artifactId>chatgpt4j</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
