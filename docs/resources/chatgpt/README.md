@@ -1,8 +1,8 @@
 # ChatGPT
 
-chatgpt4j 是一个用于访问 ChatGPT API 的 Java 客户端库，支持 OpenAI 全部的[接口](https://platform.openai.com/docs/api-reference/introduction)，几行代码就可以帮助用户实现将 ChatGPT 快速接入到自己的项目中。
+chatgpt4j 是一个用于访问 ChatGPT API 的 Java 客户端库，支持 OpenAI 全部的 [接口](https://platform.openai.com/docs/api-reference/introduction)，几行代码就可以帮助用户实现将 ChatGPT 快速接入到自己的项目中。
 
-GitHub地址：https://github.com/itlemon/chatgpt4j
+GitHub地址：[https://github.com/itlemon/chatgpt4j](https://github.com/itlemon/chatgpt4j)
 
 ## 特性⛳️
 
