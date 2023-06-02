@@ -6838,7 +6838,7 @@ vuepress-plugin-sass-palette@2.0.0-beta.219:
     sass "^1.62.1"
     vuepress-shared "2.0.0-beta.219"
 
-vuepress-plugin-search-pro@^2.0.0-beta.219:
+vuepress-plugin-search-pro@2.0.0-beta.219:
   version "2.0.0-beta.219"
   resolved "https://registry.yarnpkg.com/vuepress-plugin-search-pro/-/vuepress-plugin-search-pro-2.0.0-beta.219.tgz#d57ae95f9162ef685bdcdc5edf9a740ac67c4501"
   integrity sha512-2O1Q9gOlcJPeLMVvhF8hZR6r6jQvDelnQJJJ0LX7iC/8NOAtjmW2IBCCUTsn8Bf1gQvM5YHZnRLRhe+arH2Obw==
