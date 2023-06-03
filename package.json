@@ -7,7 +7,6 @@
   "author": "itlemon <lemon_jiang@aliyun.com>",
   "license": "MIT",
   "dependencies": {
-    "@goy/vuepress-plugin-svg-icons": "5.3.3",
     "@vuepress/plugin-google-analytics": "2.0.0-beta.62",
     "@vuepress/plugin-pwa": "2.0.0-beta.62",
     "@vuepress/plugin-pwa-popup": "2.0.0-beta.62",

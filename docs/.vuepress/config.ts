@@ -7,7 +7,6 @@ import {gitPlugin} from '@vuepress/plugin-git'
 import {copyCodePlugin} from 'vuepress-plugin-copy-code2'
 import {commentPlugin} from 'vuepress-plugin-comment2'
 import {seoPlugin} from 'vuepress-plugin-seo2'
-import {svgIconPlugin} from '@goy/vuepress-plugin-svg-icons'
 import {mdEnhancePlugin} from 'vuepress-plugin-md-enhance'
 import {componentsPlugin} from 'vuepress-plugin-components'
 import {searchProPlugin} from 'vuepress-plugin-search-pro'
@@ -121,11 +120,6 @@ export default defineUserConfig({
         // seo增强
         seoPlugin({
             hostname: 'https://codingguide.cn'
-        }),
-
-        // svg插件
-        svgIconPlugin({
-            svgsDir: '.vuepress/public/icons'
         }),
 
         // md增强插件
