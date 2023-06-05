@@ -145,9 +145,6 @@ export default defineUserConfig({
 
         // 搜索
         searchProPlugin({
-            // 配置选项
-            indexContent: true,
-            autoSuggestions: true
         }),
     ],
 })
