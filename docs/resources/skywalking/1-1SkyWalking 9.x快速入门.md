@@ -1,5 +1,32 @@
 # SkyWalking 9.x 快速入门
 
+下载地址：https://www.elastic.co/cn/downloads/elasticsearch
+
+```shell
+# 创建目录
+mkdir -p /development/programs/elasticsearch
+cd /development/programs/elasticsearch
+wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.12.2-linux-x86_64.tar.gz
+tar -xvf elasticsearch-8.12.2-linux-x86_64.tar.gz
+```
+
+![image-20240326130647225](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20240326130647225.png)
+
+注意，如果你安装的 Elasticsearch 是 8.X 版本，需要关闭 security 安全相关的功能。如下图所示：
+
+![image-20240326131448213](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20240326131448213.png)
+
+但是配置文件中并没有安全相关的配置，需要启动后才会出现，所以我们使用命令 `bin/elasticsearch` 前台启动一次（如果你是root用户启动，可能会失败，但是没有关系，第一次启动是为了生成安全相关的配置），然后在停止服务，修改安全相关的配置，修改结果如上图所示。
+
+切换到其他用户，然后启动elasticsearch
+
+sudo -iu itlemon
+
+如果没有其他用户，可以先创建一个，再切换
+
+```shell
+bin/elasticsearch -d
+```
 在 SkyWalking 官网 [下载](https://skywalking.apache.org/downloads/) SkyWalking APM v9.7.0版本以及SkyWalking Java Agent v9.1.0版本，如下图所示：
 
 ![image-20240326232806203](https://codingguide-1256975789.cos.ap-beijing.myqcloud.com/codingguide/img/image-20240326232806203.png)
